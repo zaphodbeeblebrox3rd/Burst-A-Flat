@@ -1,0 +1,41 @@
+---
+- name: Create Slurm controller configuration
+  ansible.builtin.template:
+    src: slurm.conf.j2
+    dest: /etc/slurm/slurm.conf
+    owner: slurm
+    group: slurm
+    mode: '0644'
+
+- name: Create SlurmDB configuration
+  ansible.builtin.template:
+    src: slurmdbd.conf.j2
+    dest: /etc/slurm/slurmdbd.conf
+    owner: slurm
+    group: slurm
+    mode: '0600'
+
+- name: Create systemd service for slurmctld
+  ansible.builtin.template:
+    src: slurmctld.service.j2
+    dest: /etc/systemd/system/slurmctld.service
+    mode: '0644'
+
+- name: Create systemd service for slurmd
+  ansible.builtin.template:
+    src: slurmd.service.j2
+    dest: /etc/systemd/system/slurmd.service
+    mode: '0644'
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: yes
+
+- name: Start Slurm controller services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - slurmctld
+    - slurmd

@@ -1,0 +1,48 @@
+---
+- name: Install Munge
+  ansible.builtin.package:
+    name:
+      - munge
+      - libmunge-dev
+    state: present
+
+- name: Create munge key directory
+  ansible.builtin.file:
+    path: /etc/munge
+    state: directory
+    owner: munge
+    group: munge
+    mode: '0700'
+
+- name: Generate munge key
+  ansible.builtin.shell: |
+    if [ ! -f /etc/munge/munge.key ]; then
+      /usr/sbin/mungekey -c
+    fi
+  args:
+    creates: /etc/munge/munge.key
+  become: yes
+
+- name: Set munge key permissions
+  ansible.builtin.file:
+    path: /etc/munge/munge.key
+    owner: munge
+    group: munge
+    mode: '0400'
+
+- name: Start and enable munge service
+  ansible.builtin.systemd:
+    name: munge
+    state: started
+    enabled: yes
+
+- name: Copy munge key to all nodes
+  ansible.builtin.copy:
+    src: /etc/munge/munge.key
+    dest: /etc/munge/munge.key
+    owner: munge
+    group: munge
+    mode: '0400'
+  when: inventory_hostname == groups['slurm_controllers'][0]
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['all'] }}"

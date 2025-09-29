@@ -1,0 +1,55 @@
+# Slurm configuration file
+ClusterName={{ cluster_name }}
+ControlMachine={{ inventory_hostname }}
+ControlAddr={{ ansible_default_ipv4.address }}
+
+# SlurmDB configuration
+SlurmUser=slurm
+SlurmdUser=slurm
+SlurmctldPort=6817
+SlurmdPort=6818
+StateSaveLocation=/var/spool/slurm/ctld
+SlurmdSpoolDir=/var/spool/slurm/d
+SwitchType=switch/none
+MpiDefault=none
+SlurmctldTimeout=300
+SlurmdTimeout=300
+InactiveLimit=0
+MinJobAge=300
+KillWait=30
+Waittime=0
+
+# Job accounting
+JobCheckpointDir=/var/spool/slurm/checkpoint
+JobSubmitPlugins=lua
+SchedulerType=sched/builtin
+SchedulerParameters=bf_continue
+SelectType=select/linear
+SelectTypeParameters=CR_CPU
+
+# Node definitions
+{% for host in groups['slurm_computes'] %}
+NodeName={{ hostvars[host]['inventory_hostname'] }} CPUs={{ hostvars[host]['ansible_processor_vcpus'] }} Sockets=1 CoresPerSocket={{ hostvars[host]['ansible_processor_vcpus'] }} ThreadsPerCore=1 State=UNKNOWN
+{% endfor %}
+
+# Partition definitions
+PartitionName=compute Nodes=compute-node-[1-4] Default=YES MaxTime=INFINITE State=UP
+PartitionName=network1 Nodes=compute-node-[1-2] MaxTime=INFINITE State=UP
+PartitionName=network2 Nodes=compute-node-[3-4] MaxTime=INFINITE State=UP
+
+# Prolog and Epilog
+PrologFlags=Alloc
+EpilogMsgTime=30
+JobCompType=jobcomp/none
+
+# Logging
+SlurmctldLogFile=/var/log/slurm/slurmctld.log
+SlurmdLogFile=/var/log/slurm/slurmd.log
+JobCompLoc=/var/log/slurm/jobcomp.log
+
+# Accounting
+AccountingStorageType=accounting_storage/slurmdbd
+AccountingStorageHost={{ groups['slurmdb'][0] }}
+AccountingStoragePort=6819
+AccountingStorageUser=slurm
+AccountingStoragePass=slurm

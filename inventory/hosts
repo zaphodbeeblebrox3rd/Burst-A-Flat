@@ -1,0 +1,48 @@
+[network1]
+login-node ansible_host=192.168.50.10
+management-node ansible_host=192.168.50.11
+controller-node ansible_host=192.168.50.12
+slurmdb-node ansible_host=192.168.50.13
+compute-node-1 ansible_host=192.168.50.14
+compute-node-2 ansible_host=192.168.50.15
+nosql-node-1 ansible_host=192.168.50.16
+
+[network2]
+compute-node-3 ansible_host=192.168.60.10
+compute-node-4 ansible_host=192.168.60.11
+nosql-node-2 ansible_host=192.168.60.12
+
+[slurm_controllers]
+controller-node
+
+[slurm_computes]
+compute-node-1
+compute-node-2
+compute-node-3
+compute-node-4
+
+[slurm_login]
+login-node
+
+[slurmdb]
+slurmdb-node
+
+[nfs_servers]
+controller-node
+
+[nfs_clients]
+login-node
+management-node
+compute-node-1
+compute-node-2
+
+[mongodb_primary]
+nosql-node-1
+
+[mongodb_replica]
+nosql-node-2
+
+[all:vars]
+ansible_user=vagrant
+ansible_ssh_private_key_file=~/.vagrant.d/insecure_private_key
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'

@@ -1,0 +1,24 @@
+---
+- name: Install R and dependencies
+  ansible.builtin.package:
+    name:
+      - r-base
+      - r-base-dev
+      - r-cran-rmongodb
+      - r-cran-dplyr
+      - r-cran-ggplot2
+      - r-cran-data.table
+      - r-cran-jsonlite
+      - r-cran-httr
+    state: present
+
+- name: Install R packages via R
+  ansible.builtin.shell: |
+    R --slave -e "install.packages(c('mongolite', 'DBI', 'RSQLite'), repos='https://cran.rstudio.com/')"
+  args:
+    creates: /tmp/r_packages_installed
+
+- name: Mark R packages as installed
+  ansible.builtin.file:
+    path: /tmp/r_packages_installed
+    state: touch

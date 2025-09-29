@@ -1,0 +1,30 @@
+---
+- name: Install NFS client
+  ansible.builtin.package:
+    name:
+      - nfs-common
+    state: present
+
+- name: Create mount point
+  ansible.builtin.file:
+    path: /home/vagrant/shared
+    state: directory
+    owner: vagrant
+    group: vagrant
+    mode: '0755'
+
+- name: Mount NFS share
+  ansible.builtin.mount:
+    path: /home/vagrant/shared
+    src: "{{ groups['nfs_servers'][0] }}:/home/shared"
+    fstype: nfs
+    opts: defaults
+    state: mounted
+
+- name: Add NFS mount to fstab
+  ansible.builtin.mount:
+    path: /home/vagrant/shared
+    src: "{{ groups['nfs_servers'][0] }}:/home/shared"
+    fstype: nfs
+    opts: defaults
+    state: present

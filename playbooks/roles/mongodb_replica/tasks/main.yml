@@ -1,0 +1,47 @@
+---
+- name: Install MongoDB
+  ansible.builtin.apt_repository:
+    repo: "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse"
+    state: present
+    update_cache: yes
+
+- name: Install MongoDB packages
+  ansible.builtin.package:
+    name:
+      - mongodb-org
+      - mongodb-org-server
+      - mongodb-org-mongos
+      - mongodb-org-tools
+    state: present
+
+- name: Create MongoDB configuration
+  ansible.builtin.template:
+    src: mongod.conf.j2
+    dest: /etc/mongod.conf
+    owner: mongodb
+    group: mongodb
+    mode: '0644'
+
+- name: Start and enable MongoDB
+  ansible.builtin.systemd:
+    name: mongod
+    state: started
+    enabled: yes
+
+- name: Wait for MongoDB to start
+  ansible.builtin.wait_for:
+    port: 27017
+    delay: 10
+
+- name: Add replica to MongoDB replica set
+  ansible.builtin.shell: |
+    mongosh --eval "rs.add('{{ inventory_hostname }}:27017')"
+  args:
+    creates: /tmp/mongodb_replica_added
+  register: mongodb_add
+  failed_when: mongodb_add.rc != 0 and "already a member" not in mongodb_add.stderr
+
+- name: Mark replica as added
+  ansible.builtin.file:
+    path: /tmp/mongodb_replica_added
+    state: touch

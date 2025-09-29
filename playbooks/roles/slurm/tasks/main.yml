@@ -1,0 +1,38 @@
+---
+- name: Install Slurm dependencies
+  ansible.builtin.package:
+    name:
+      - libmunge-dev
+      - libssl-dev
+      - libpam0g-dev
+      - libnuma-dev
+      - libhwloc-dev
+      - liblz4-dev
+      - libzstd-dev
+      - libbz2-dev
+      - liblzma-dev
+      - libcurl4-openssl-dev
+      - libjwt-dev
+      - libmysqlclient-dev
+    state: present
+
+- name: Download and compile Slurm
+  ansible.builtin.shell: |
+    cd /tmp
+    wget https://download.schedmd.com/slurm/slurm-{{ slurm_version }}.tar.bz2
+    tar -xjf slurm-{{ slurm_version }}.tar.bz2
+    cd slurm-{{ slurm_version }}
+    ./configure --prefix=/usr/local --sysconfdir=/etc/slurm --enable-pam --with-mysql
+    make -j$(nproc)
+    make install
+  args:
+    creates: /usr/local/bin/slurmctld
+  become: yes
+
+- name: Create Slurm configuration directory
+  ansible.builtin.file:
+    path: /etc/slurm
+    state: directory
+    owner: slurm
+    group: slurm
+    mode: '0755'

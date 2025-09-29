@@ -1,0 +1,43 @@
+# Burst-A-Flat Slurm Cluster Requirements
+
+## System Requirements
+- VirtualBox 6.0+ or VMware
+- Vagrant 2.0+
+- Ansible 2.9+
+- 8GB+ RAM (for all VMs)
+- 50GB+ free disk space
+
+## Software Versions
+- Ubuntu 22.04 LTS (Jammy)
+- Slurm 23.02.6
+- MariaDB 10.6+
+- MongoDB 6.0+
+- R 4.2+
+- Munge (latest)
+
+## Network Configuration
+- Network 1: 192.168.50.0/24 (On-premises)
+- Network 2: 192.168.60.0/24 (Cloud simulation)
+
+## VM Specifications
+- Login Node: 1GB RAM, 2 CPUs
+- Management Node: 1GB RAM, 2 CPUs
+- Controller Node: 2GB RAM, 4 CPUs
+- SlurmDB Node: 1GB RAM, 2 CPUs
+- Compute Nodes: 2GB RAM, 4 CPUs each
+- NoSQL Nodes: 1GB RAM, 2 CPUs each
+
+## R Packages
+- mongolite
+- dplyr
+- ggplot2
+- data.table
+- jsonlite
+- httr
+- DBI
+- RSQLite
+
+## Ansible Collections
+- ansible.builtin
+- community.general
+- community.mysql

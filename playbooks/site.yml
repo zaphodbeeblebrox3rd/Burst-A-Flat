@@ -1,0 +1,123 @@
+---
+- name: Configure Slurm Cluster
+  hosts: all
+  become: yes
+  gather_facts: yes
+  vars:
+    cluster_name: "burst-a-flat"
+    slurm_version: "23.02.6"
+    munge_key: "{{ lookup('password', '/tmp/munge_key length=32 chars=ascii_letters,digits') }}"
+    
+  pre_tasks:
+    - name: Update package cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install common packages
+      ansible.builtin.package:
+        name:
+          - curl
+          - wget
+          - vim
+          - htop
+          - tree
+          - git
+          - build-essential
+          - python3-pip
+        state: present
+
+  roles:
+    - role: common
+    - role: munge
+    - role: slurm
+    - role: nfs
+    - role: mariadb
+    - role: mongodb
+    - role: r_environment
+
+- name: Configure Slurm Controller
+  hosts: slurm_controllers
+  become: yes
+  roles:
+    - role: slurm_controller
+
+- name: Configure Slurm Compute Nodes
+  hosts: slurm_computes
+  become: yes
+  roles:
+    - role: slurm_compute
+
+- name: Configure NFS Server
+  hosts: nfs_servers
+  become: yes
+  roles:
+    - role: nfs_server
+
+- name: Configure NFS Clients
+  hosts: nfs_clients
+  become: yes
+  roles:
+    - role: nfs_client
+
+- name: Configure MariaDB for SlurmDB
+  hosts: slurmdb
+  become: yes
+  roles:
+    - role: mariadb_server
+
+- name: Configure MongoDB Primary
+  hosts: mongodb_primary
+  become: yes
+  roles:
+    - role: mongodb_primary
+
+- name: Configure MongoDB Replica
+  hosts: mongodb_replica
+  become: yes
+  roles:
+    - role: mongodb_replica
+
+- name: Final cluster configuration
+  hosts: all
+  become: yes
+  tasks:
+    - name: Start and enable Slurm services
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - munge
+        - slurmd
+        - slurmctld
+      when: inventory_hostname in groups['slurm_controllers'] or inventory_hostname in groups['slurm_computes']
+
+    - name: Create shared home directory structure
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: vagrant
+        group: vagrant
+        mode: '0755'
+      loop:
+        - /home/vagrant/shared
+        - /home/vagrant/shared/data
+        - /home/vagrant/shared/scripts
+        - /home/vagrant/shared/results
+      when: inventory_hostname in groups['nfs_servers']
+
+    - name: Set up SSH keys for passwordless access
+      ansible.builtin.authorized_key:
+        user: vagrant
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+        state: present
+      when: lookup('file', '~/.ssh/id_rsa.pub', errors='ignore') != ''
+
+    - name: Display cluster information
+      ansible.builtin.debug:
+        msg: |
+          Cluster setup complete!
+          Login to the cluster: vagrant ssh login-node
+          Check cluster status: sinfo
+          Submit a job: sbatch /home/vagrant/shared/scripts/r_workload_demo.sh

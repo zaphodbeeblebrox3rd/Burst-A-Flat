@@ -1,0 +1,44 @@
+---
+- name: Install MariaDB server
+  ansible.builtin.package:
+    name:
+      - mariadb-server
+      - mariadb-client
+      - python3-pymysql
+    state: present
+
+- name: Start and enable MariaDB
+  ansible.builtin.systemd:
+    name: mariadb
+    state: started
+    enabled: yes
+
+- name: Create Slurm database
+  ansible.builtin.mysql_db:
+    name: slurm_acct_db
+    state: present
+    login_user: root
+    login_password: ""
+
+- name: Create Slurm user
+  ansible.builtin.mysql_user:
+    name: slurm
+    password: slurm
+    priv: "slurm_acct_db.*:ALL"
+    state: present
+    login_user: root
+    login_password: ""
+
+- name: Configure MariaDB for Slurm
+  ansible.builtin.template:
+    src: 50-server.cnf.j2
+    dest: /etc/mysql/mariadb.conf.d/50-server.cnf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart mariadb
+
+- name: Restart MariaDB
+  ansible.builtin.systemd:
+    name: mariadb
+    state: restarted

@@ -1,0 +1,56 @@
+---
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Configure /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "{{ hostvars[item]['ansible_default_ipv4']['address'] }} {{ item }}"
+    state: present
+  loop: "{{ groups['all'] }}"
+
+- name: Install required packages
+  ansible.builtin.package:
+    name:
+      - python3
+      - python3-pip
+      - python3-dev
+      - libssl-dev
+      - libffi-dev
+      - libjpeg-dev
+      - libpng-dev
+      - zlib1g-dev
+      - libbz2-dev
+      - libreadline-dev
+      - libsqlite3-dev
+      - libncurses5-dev
+      - libncursesw5-dev
+      - xz-utils
+      - tk-dev
+      - libxml2-dev
+      - libxmlsec1-dev
+      - libffi-dev
+      - liblzma-dev
+    state: present
+
+- name: Create slurm user
+  ansible.builtin.user:
+    name: slurm
+    system: yes
+    shell: /bin/bash
+    home: /var/lib/slurm
+    create_home: yes
+
+- name: Create slurm directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: slurm
+    group: slurm
+    mode: '0755'
+  loop:
+    - /var/lib/slurm
+    - /var/log/slurm
+    - /etc/slurm
+    - /var/spool/slurm

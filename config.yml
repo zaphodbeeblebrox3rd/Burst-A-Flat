@@ -1,0 +1,92 @@
+# Burst-A-Flat Configuration
+# Choose your virtualization provider: virtualbox or vmware_workstation
+
+provider: "virtualbox"  # Options: virtualbox, vmware_workstation
+
+# Provider-specific settings
+providers:
+  virtualbox:
+    box: "ubuntu/jammy64"
+    network_type: "private_network"
+    network_options:
+      network1: "virtualbox__intnet"
+      network2: "virtualbox__intnet"
+  
+  vmware_workstation:
+    box: "ubuntu/jammy64"
+    network_type: "private_network"
+    network_options:
+      network1: "vmware_workstation__intnet"
+      network2: "vmware_workstation__intnet"
+
+# VM configurations
+vms:
+  login-node:
+    hostname: "login-node"
+    ip_network1: "192.168.50.10"
+    memory: 1024
+    cpus: 2
+    roles: ["login", "nfs_client"]
+  
+  management-node:
+    hostname: "management-node"
+    ip_network1: "192.168.50.11"
+    memory: 1024
+    cpus: 2
+    roles: ["management", "nfs_client"]
+  
+  controller-node:
+    hostname: "controller-node"
+    ip_network1: "192.168.50.12"
+    memory: 2048
+    cpus: 4
+    roles: ["controller", "nfs_server", "slurm_controller"]
+  
+  slurmdb-node:
+    hostname: "slurmdb-node"
+    ip_network1: "192.168.50.13"
+    memory: 1024
+    cpus: 2
+    roles: ["slurmdb", "mariadb"]
+  
+  compute-node-1:
+    hostname: "compute-node-1"
+    ip_network1: "192.168.50.14"
+    memory: 2048
+    cpus: 4
+    roles: ["compute", "nfs_client", "slurm_compute"]
+  
+  compute-node-2:
+    hostname: "compute-node-2"
+    ip_network1: "192.168.50.15"
+    memory: 2048
+    cpus: 4
+    roles: ["compute", "nfs_client", "slurm_compute"]
+  
+  nosql-node-1:
+    hostname: "nosql-node-1"
+    ip_network1: "192.168.50.16"
+    memory: 1024
+    cpus: 2
+    roles: ["nosql", "mongodb_primary"]
+  
+  compute-node-3:
+    hostname: "compute-node-3"
+    ip_network2: "192.168.60.10"
+    memory: 2048
+    cpus: 4
+    roles: ["compute", "slurm_compute"]
+  
+  compute-node-4:
+    hostname: "compute-node-4"
+    ip_network2: "192.168.60.11"
+    memory: 2048
+    cpus: 4
+    roles: ["compute", "slurm_compute"]
+  
+  nosql-node-2:
+    hostname: "nosql-node-2"
+    ip_network2: "192.168.60.12"
+    memory: 1024
+    cpus: 2
+    roles: ["nosql", "mongodb_replica"]
