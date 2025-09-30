@@ -6,7 +6,7 @@
 - name: Configure /etc/hosts
   ansible.builtin.lineinfile:
     path: /etc/hosts
-    line: "{{ hostvars[item]['ansible_default_ipv4']['address'] }} {{ item }}"
+    line: "{{ hostvars[item]['ansible_host'] }} {{ item }}"
     state: present
   loop: "{{ groups['all'] }}"
 

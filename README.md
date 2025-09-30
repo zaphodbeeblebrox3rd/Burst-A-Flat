@@ -84,15 +84,14 @@ graph TB
 ### Required Software
 - **Vagrant** (latest version)
 - **Ansible** (2.9+)
-- **Ruby** (for Vagrantfile generation)
 
 ### Virtualization Provider (Choose One)
 - **VirtualBox** (free, recommended for beginners)
   - VirtualBox 6.0+
   - VirtualBox Extension Pack (recommended)
-- **VMware Workstation Pro** (paid, better performance)
-  - VMware Workstation Pro 15+
-  - Vagrant VMware plugin: `vagrant plugin install vagrant-vmware-workstation`
+- **vSphere** (enterprise, better performance)
+  - vSphere 6.5+
+  - Vagrant vSphere plugin: `vagrant plugin install vagrant-vsphere`
 
 ## Quick Start
 
@@ -129,7 +128,7 @@ sbatch scripts/r_workload_demo.sh
 
 ## Provider Flexibility
 
-This project supports both VirtualBox and VMware Workstation Pro, allowing you to choose based on your needs:
+This project supports both VirtualBox and vSphere, allowing you to choose based on your needs:
 
 ### VirtualBox (Recommended for Beginners)
 - ✅ **Free** and open source
@@ -138,7 +137,7 @@ This project supports both VirtualBox and VMware Workstation Pro, allowing you t
 - ⚠️ Lower performance than VMware
 - ⚠️ May have issues with WSL on Windows
 
-### VMware Workstation Pro (Recommended for Production)
+### vSphere (Recommended for Production)
 - ✅ **Better performance** and stability
 - ✅ Better Windows/WSL compatibility
 - ✅ More advanced networking features
@@ -150,10 +149,10 @@ You can easily switch between providers:
 
 ```bash
 # Switch to VirtualBox
-ruby scripts/generate_vagrantfile.rb virtualbox
+bash scripts/generate_vagrantfile.sh virtualbox
 
-# Switch to VMware
-ruby scripts/generate_vagrantfile.rb vmware_workstation
+# Switch to vSphere
+bash scripts/generate_vagrantfile.sh vsphere
 
 # Or use the setup script
 ./setup.sh  # Linux/Mac
@@ -207,11 +206,48 @@ The included R workload demonstrates:
 
 ## Troubleshooting
 
+### Installation and Setup
+
+#### Vagrant Version Compatibility Issues
+
+If you encounter errors like "The provider 'virtualbox' that was requested to back the machine is reporting that it isn't usable on this system" or see messages about unsupported VirtualBox versions, this indicates a version compatibility issue between Vagrant and VirtualBox.
+
+**Solution**: Install the latest version of Vagrant from the official HashiCorp website:
+
+1. **Visit the official download page**: https://www.vagrantup.com/downloads
+2. **Download the latest version** for your operating system
+3. **Install according to your OS**:
+   - **Linux**: Download the `.deb` or `.rpm` package and install with your package manager
+   - **macOS**: Download the `.dmg` file and follow the installation wizard
+   - **Windows**: Download the `.msi` installer and run as administrator
+4. **Verify the installation**:
+   ```bash
+   vagrant --version
+   ```
+5. **Clean up any existing Vagrant state**:
+   ```bash
+   vagrant destroy -f
+   rm -rf .vagrant/
+   ```
+6. **Regenerate your Vagrantfile**:
+   ```bash
+   ./setup.sh  # Choose your preferred provider
+   ```
+7. **Deploy again**:
+   ```bash
+   vagrant up
+   ```
+
+**Why this happens**: Older versions of Vagrant may not support newer versions of VirtualBox. For example, Vagrant 2.3.4 only supports VirtualBox versions up to 7.0, but if you have VirtualBox 7.2.2 installed, you'll get compatibility errors.
+
+**Alternative**: If you can't update Vagrant, you can use vSphere instead, which typically has better version compatibility.
+
 ### Common Issues
 
 1. **NFS Mount Failures**: Check controller node NFS service
 2. **Slurm Communication**: Verify Munge keys are synchronized
 3. **MongoDB Replication**: Check network connectivity between nodes
+
 
 ### Logs
 

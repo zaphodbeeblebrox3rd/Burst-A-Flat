@@ -1,11 +1,11 @@
 @echo off
 REM Burst-A-Flat Setup Script for Windows
-REM Allows users to choose between VirtualBox and VMware Workstation Pro
+REM Allows users to choose between VirtualBox and vSphere
 
 echo === Burst-A-Flat Setup ===
 echo Choose your virtualization provider:
 echo 1^) VirtualBox (default^)
-echo 2^) VMware Workstation Pro
+echo 2^) vSphere
 echo 3^) Exit
 echo.
 
@@ -16,9 +16,9 @@ if "%choice%"=="1" (
     ruby scripts/generate_vagrantfile.rb virtualbox
     echo ✅ VirtualBox Vagrantfile generated
 ) else if "%choice%"=="2" (
-    echo Setting up for VMware Workstation Pro...
-    ruby scripts/generate_vagrantfile.rb vmware_workstation
-    echo ✅ VMware Vagrantfile generated
+    echo Setting up for vSphere...
+    ruby scripts/generate_vagrantfile.rb vsphere
+    echo ✅ vSphere Vagrantfile generated
 ) else if "%choice%"=="3" (
     echo Exiting...
     exit /b 0
@@ -41,6 +41,6 @@ echo For VirtualBox users:
 echo   - VirtualBox must be installed
 echo   - VirtualBox Extension Pack recommended
 echo.
-echo For VMware users:
-echo   - VMware Workstation Pro must be installed
-echo   - Vagrant VMware plugin: vagrant plugin install vagrant-vmware-workstation
+echo For vSphere users:
+echo   - vSphere must be installed
+echo   - Vagrant vSphere plugin: vagrant plugin install vagrant-vsphere

@@ -1,141 +1,306 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
+# Generated Vagrantfile for Burst-A-Flat
+# Provider: virtualbox
+# Generated on: Mon Sep 29 10:49:05 AM CDT 2025
 
 Vagrant.configure("2") do |config|
   # Global configuration
   config.vm.box = "ubuntu/jammy64"
   config.vm.box_check_update = false
   
-  # Network configuration for VMware
-  config.vm.network "private_network", ip: "192.168.50.10", vmware_workstation__intnet: "network1"
-  config.vm.network "private_network", ip: "192.168.60.10", vmware_workstation__intnet: "network2"
+  # Network configuration
+  config.vm.network "private_network", ip: "192.168.56.10", virtualbox__hostonly: "network1"
+  config.vm.network "private_network", ip: "192.168.57.10", virtualbox__hostonly: "network2"
   
-  # Provider configuration for VMware
-  config.vm.provider "vmware_workstation" do |vmw|
-    vmw.name = "login-node"
-    vmw.memory = "1024"
-    vmw.cpus = 2
-    vmw.gui = false
+  # Provider configuration
+  config.vm.provider "virtualbox" do |provider|
+    provider.name = "login-node"
+    provider.memory = "1024"
+    provider.cpus = 2
+    provider.gui = false
   end
 
-  # Login Node (Network 1)
-  config.vm.define "login-node" do |login|
-    login.vm.hostname = "login-node"
-    login.vm.network "private_network", ip: "192.168.50.10", vmware_workstation__intnet: "network1"
-    login.vm.provider "vmware_workstation" do |vmw|
-      vmw.name = "login-node"
-      vmw.memory = "1024"
-      vmw.cpus = 2
+  # login-node - 
+  config.vm.define "login-node" do |login_node|
+    login_node.vm.hostname = "login-node"
+    login_node.vm.network "private_network", ip: "192.168.56.10", virtualbox__hostonly: "network1"
+    login_node.vm.provision "shell", inline: <<-SHELL
+      # Ensure .ssh directory exists
+      mkdir -p /home/vagrant/.ssh
+      chmod 700 /home/vagrant/.ssh
+      
+      # Add user's SSH key if not already present
+      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      fi
+      
+      # Set proper ownership and permissions
+      chown vagrant:vagrant /home/vagrant/.ssh/authorized_keys
+      chmod 600 /home/vagrant/.ssh/authorized_keys
+      
+      # Ensure the directory has correct ownership too
+      chown vagrant:vagrant /home/vagrant/.ssh
+    SHELL
+    login_node.vm.provider "virtualbox" do |provider|
+      provider.name = "login-node"
+      provider.memory = "1024"
+      provider.cpus = 2
     end
   end
 
-  # Management Node (Network 1)
-  config.vm.define "management-node" do |mgmt|
-    mgmt.vm.hostname = "management-node"
-    mgmt.vm.network "private_network", ip: "192.168.50.11", vmware_workstation__intnet: "network1"
-    mgmt.vm.provider "vmware_workstation" do |vmw|
-      vmw.name = "management-node"
-      vmw.memory = "1024"
-      vmw.cpus = 2
+  # management-node - 
+  config.vm.define "management-node" do |management_node|
+    management_node.vm.hostname = "management-node"
+    management_node.vm.network "private_network", ip: "192.168.56.11", virtualbox__hostonly: "network1"
+    management_node.vm.provision "shell", inline: <<-SHELL
+      # Ensure .ssh directory exists
+      mkdir -p /home/vagrant/.ssh
+      chmod 700 /home/vagrant/.ssh
+      
+      # Add user's SSH key if not already present
+      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      fi
+      
+      # Set proper ownership and permissions
+      chown vagrant:vagrant /home/vagrant/.ssh/authorized_keys
+      chmod 600 /home/vagrant/.ssh/authorized_keys
+      
+      # Ensure the directory has correct ownership too
+      chown vagrant:vagrant /home/vagrant/.ssh
+    SHELL
+    management_node.vm.provider "virtualbox" do |provider|
+      provider.name = "management-node"
+      provider.memory = "1024"
+      provider.cpus = 2
     end
   end
 
-  # Controller Node (Network 1) - Slurm Controller + NFS Server
-  config.vm.define "controller-node" do |ctrl|
-    ctrl.vm.hostname = "controller-node"
-    ctrl.vm.network "private_network", ip: "192.168.50.12", vmware_workstation__intnet: "network1"
-    ctrl.vm.provider "vmware_workstation" do |vmw|
-      vmw.name = "controller-node"
-      vmw.memory = "2048"
-      vmw.cpus = 4
+  # controller-node - 
+  config.vm.define "controller-node" do |controller_node|
+    controller_node.vm.hostname = "controller-node"
+    controller_node.vm.network "private_network", ip: "192.168.56.12", virtualbox__hostonly: "network1"
+    controller_node.vm.provision "shell", inline: <<-SHELL
+      # Ensure .ssh directory exists
+      mkdir -p /home/vagrant/.ssh
+      chmod 700 /home/vagrant/.ssh
+      
+      # Add user's SSH key if not already present
+      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      fi
+      
+      # Set proper ownership and permissions
+      chown vagrant:vagrant /home/vagrant/.ssh/authorized_keys
+      chmod 600 /home/vagrant/.ssh/authorized_keys
+      
+      # Ensure the directory has correct ownership too
+      chown vagrant:vagrant /home/vagrant/.ssh
+    SHELL
+    controller_node.vm.provider "virtualbox" do |provider|
+      provider.name = "controller-node"
+      provider.memory = "2048"
+      provider.cpus = 4
     end
   end
 
-  # SlurmDB Node (Network 1) - MariaDB
-  config.vm.define "slurmdb-node" do |db|
-    db.vm.hostname = "slurmdb-node"
-    db.vm.network "private_network", ip: "192.168.50.13", vmware_workstation__intnet: "network1"
-    db.vm.provider "vmware_workstation" do |vmw|
-      vmw.name = "slurmdb-node"
-      vmw.memory = "1024"
-      vmw.cpus = 2
+  # slurmdb-node - 
+  config.vm.define "slurmdb-node" do |slurmdb_node|
+    slurmdb_node.vm.hostname = "slurmdb-node"
+    slurmdb_node.vm.network "private_network", ip: "192.168.56.13", virtualbox__hostonly: "network1"
+    slurmdb_node.vm.provision "shell", inline: <<-SHELL
+      # Ensure .ssh directory exists
+      mkdir -p /home/vagrant/.ssh
+      chmod 700 /home/vagrant/.ssh
+      
+      # Add user's SSH key if not already present
+      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      fi
+      
+      # Set proper ownership and permissions
+      chown vagrant:vagrant /home/vagrant/.ssh/authorized_keys
+      chmod 600 /home/vagrant/.ssh/authorized_keys
+      
+      # Ensure the directory has correct ownership too
+      chown vagrant:vagrant /home/vagrant/.ssh
+    SHELL
+    slurmdb_node.vm.provider "virtualbox" do |provider|
+      provider.name = "slurmdb-node"
+      provider.memory = "1024"
+      provider.cpus = 2
     end
   end
 
-  # Compute Node 1 (Network 1)
-  config.vm.define "compute-node-1" do |comp1|
-    comp1.vm.hostname = "compute-node-1"
-    comp1.vm.network "private_network", ip: "192.168.50.14", vmware_workstation__intnet: "network1"
-    comp1.vm.provider "vmware_workstation" do |vmw|
-      vmw.name = "compute-node-1"
-      vmw.memory = "2048"
-      vmw.cpus = 4
+  # compute-node-1 - 
+  config.vm.define "compute-node-1" do |compute_node_1|
+    compute_node_1.vm.hostname = "compute-node-1"
+    compute_node_1.vm.network "private_network", ip: "192.168.56.14", virtualbox__hostonly: "network1"
+    compute_node_1.vm.provision "shell", inline: <<-SHELL
+      # Ensure .ssh directory exists
+      mkdir -p /home/vagrant/.ssh
+      chmod 700 /home/vagrant/.ssh
+      
+      # Add user's SSH key if not already present
+      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      fi
+      
+      # Set proper ownership and permissions
+      chown vagrant:vagrant /home/vagrant/.ssh/authorized_keys
+      chmod 600 /home/vagrant/.ssh/authorized_keys
+      
+      # Ensure the directory has correct ownership too
+      chown vagrant:vagrant /home/vagrant/.ssh
+    SHELL
+    compute_node_1.vm.provider "virtualbox" do |provider|
+      provider.name = "compute-node-1"
+      provider.memory = "2048"
+      provider.cpus = 4
     end
   end
 
-  # Compute Node 2 (Network 1)
-  config.vm.define "compute-node-2" do |comp2|
-    comp2.vm.hostname = "compute-node-2"
-    comp2.vm.network "private_network", ip: "192.168.50.15", vmware_workstation__intnet: "network1"
-    comp2.vm.provider "vmware_workstation" do |vmw|
-      vmw.name = "compute-node-2"
-      vmw.memory = "2048"
-      vmw.cpus = 4
+  # compute-node-2 - 
+  config.vm.define "compute-node-2" do |compute_node_2|
+    compute_node_2.vm.hostname = "compute-node-2"
+    compute_node_2.vm.network "private_network", ip: "192.168.56.15", virtualbox__hostonly: "network1"
+    compute_node_2.vm.provision "shell", inline: <<-SHELL
+      # Ensure .ssh directory exists
+      mkdir -p /home/vagrant/.ssh
+      chmod 700 /home/vagrant/.ssh
+      
+      # Add user's SSH key if not already present
+      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      fi
+      
+      # Set proper ownership and permissions
+      chown vagrant:vagrant /home/vagrant/.ssh/authorized_keys
+      chmod 600 /home/vagrant/.ssh/authorized_keys
+      
+      # Ensure the directory has correct ownership too
+      chown vagrant:vagrant /home/vagrant/.ssh
+    SHELL
+    compute_node_2.vm.provider "virtualbox" do |provider|
+      provider.name = "compute-node-2"
+      provider.memory = "2048"
+      provider.cpus = 4
     end
   end
 
-  # NoSQL Node 1 (Network 1) - MongoDB Primary
-  config.vm.define "nosql-node-1" do |nosql1|
-    nosql1.vm.hostname = "nosql-node-1"
-    nosql1.vm.network "private_network", ip: "192.168.50.16", vmware_workstation__intnet: "network1"
-    nosql1.vm.provider "vmware_workstation" do |vmw|
-      vmw.name = "nosql-node-1"
-      vmw.memory = "1024"
-      vmw.cpus = 2
+  # nosql-node-1 - 
+  config.vm.define "nosql-node-1" do |nosql_node_1|
+    nosql_node_1.vm.hostname = "nosql-node-1"
+    nosql_node_1.vm.network "private_network", ip: "192.168.56.16", virtualbox__hostonly: "network1"
+    nosql_node_1.vm.provision "shell", inline: <<-SHELL
+      # Ensure .ssh directory exists
+      mkdir -p /home/vagrant/.ssh
+      chmod 700 /home/vagrant/.ssh
+      
+      # Add user's SSH key if not already present
+      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      fi
+      
+      # Set proper ownership and permissions
+      chown vagrant:vagrant /home/vagrant/.ssh/authorized_keys
+      chmod 600 /home/vagrant/.ssh/authorized_keys
+      
+      # Ensure the directory has correct ownership too
+      chown vagrant:vagrant /home/vagrant/.ssh
+    SHELL
+    nosql_node_1.vm.provider "virtualbox" do |provider|
+      provider.name = "nosql-node-1"
+      provider.memory = "1024"
+      provider.cpus = 2
     end
   end
 
-  # Compute Node 3 (Network 2) - Cloud simulation
-  config.vm.define "compute-node-3" do |comp3|
-    comp3.vm.hostname = "compute-node-3"
-    comp3.vm.network "private_network", ip: "192.168.60.10", vmware_workstation__intnet: "network2"
-    comp3.vm.provider "vmware_workstation" do |vmw|
-      vmw.name = "compute-node-3"
-      vmw.memory = "2048"
-      vmw.cpus = 4
+  # compute-node-3 - 
+  config.vm.define "compute-node-3" do |compute_node_3|
+    compute_node_3.vm.hostname = "compute-node-3"
+    compute_node_3.vm.network "private_network", ip: "192.168.57.10", virtualbox__hostonly: "network2"
+    compute_node_3.vm.provision "shell", inline: <<-SHELL
+      # Ensure .ssh directory exists
+      mkdir -p /home/vagrant/.ssh
+      chmod 700 /home/vagrant/.ssh
+      
+      # Add user's SSH key if not already present
+      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      fi
+      
+      # Set proper ownership and permissions
+      chown vagrant:vagrant /home/vagrant/.ssh/authorized_keys
+      chmod 600 /home/vagrant/.ssh/authorized_keys
+      
+      # Ensure the directory has correct ownership too
+      chown vagrant:vagrant /home/vagrant/.ssh
+    SHELL
+    compute_node_3.vm.provider "virtualbox" do |provider|
+      provider.name = "compute-node-3"
+      provider.memory = "2048"
+      provider.cpus = 4
     end
   end
 
-  # Compute Node 4 (Network 2) - Cloud simulation
-  config.vm.define "compute-node-4" do |comp4|
-    comp4.vm.hostname = "compute-node-4"
-    comp4.vm.network "private_network", ip: "192.168.60.11", vmware_workstation__intnet: "network2"
-    comp4.vm.provider "vmware_workstation" do |vmw|
-      vmw.name = "compute-node-4"
-      vmw.memory = "2048"
-      vmw.cpus = 4
+  # compute-node-4 - 
+  config.vm.define "compute-node-4" do |compute_node_4|
+    compute_node_4.vm.hostname = "compute-node-4"
+    compute_node_4.vm.network "private_network", ip: "192.168.57.11", virtualbox__hostonly: "network2"
+    compute_node_4.vm.provision "shell", inline: <<-SHELL
+      # Ensure .ssh directory exists
+      mkdir -p /home/vagrant/.ssh
+      chmod 700 /home/vagrant/.ssh
+      
+      # Add user's SSH key if not already present
+      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      fi
+      
+      # Set proper ownership and permissions
+      chown vagrant:vagrant /home/vagrant/.ssh/authorized_keys
+      chmod 600 /home/vagrant/.ssh/authorized_keys
+      
+      # Ensure the directory has correct ownership too
+      chown vagrant:vagrant /home/vagrant/.ssh
+    SHELL
+    compute_node_4.vm.provider "virtualbox" do |provider|
+      provider.name = "compute-node-4"
+      provider.memory = "2048"
+      provider.cpus = 4
     end
   end
 
-  # NoSQL Node 2 (Network 2) - MongoDB Replica
-  config.vm.define "nosql-node-2" do |nosql2|
-    nosql2.vm.hostname = "nosql-node-2"
-    nosql2.vm.network "private_network", ip: "192.168.60.12", vmware_workstation__intnet: "network2"
-    nosql2.vm.provider "vmware_workstation" do |vmw|
-      vmw.name = "nosql-node-2"
-      vmw.memory = "1024"
-      vmw.cpus = 2
+  # nosql-node-2 - 
+  config.vm.define "nosql-node-2" do |nosql_node_2|
+    nosql_node_2.vm.hostname = "nosql-node-2"
+    nosql_node_2.vm.network "private_network", ip: "192.168.57.12", virtualbox__hostonly: "network2"
+    nosql_node_2.vm.provision "shell", inline: <<-SHELL
+      # Ensure .ssh directory exists
+      mkdir -p /home/vagrant/.ssh
+      chmod 700 /home/vagrant/.ssh
+      
+      # Add user's SSH key if not already present
+      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      fi
+      
+      # Set proper ownership and permissions
+      chown vagrant:vagrant /home/vagrant/.ssh/authorized_keys
+      chmod 600 /home/vagrant/.ssh/authorized_keys
+      
+      # Ensure the directory has correct ownership too
+      chown vagrant:vagrant /home/vagrant/.ssh
+    SHELL
+    nosql_node_2.vm.provider "virtualbox" do |provider|
+      provider.name = "nosql-node-2"
+      provider.memory = "1024"
+      provider.cpus = 2
     end
   end
 
-  # Provision all nodes with Ansible
-  config.vm.provision "ansible" do |ansible|
-    ansible.playbook = "playbooks/site.yml"
-    ansible.inventory_path = "inventory/hosts"
-    ansible.limit = "all"
-    ansible.extra_vars = {
-      ansible_user: "vagrant",
-      ansible_ssh_private_key_file: "~/.vagrant.d/insecure_private_key"
-    }
-  end
+  # Note: Ansible provisioning is run manually after all VMs are up
+  # Run: ansible-playbook -i inventory/hosts playbooks/site.yml
 end

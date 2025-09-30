@@ -6,12 +6,12 @@ Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/jammy64"
   config.vm.box_check_update = false
   
-  # Network configuration for VMware
-  config.vm.network "private_network", ip: "192.168.50.10", virtualbox__intnet: "network1"
-  config.vm.network "private_network", ip: "192.168.60.10", virtualbox__intnet: "network2"
-  
-  # Provider configuration for VMware
-  config.vm.provider "vmware_workstation" do |vmw|
+# Network configuration for vSphere
+config.vm.network "private_network", ip: "192.168.50.10", vsphere__intnet: "network1"
+config.vm.network "private_network", ip: "192.168.60.10", vsphere__intnet: "network2"
+
+# Provider configuration for vSphere
+config.vm.provider "vsphere" do |vmw|
     vmw.name = "login-node"
     vmw.memory = "1024"
     vmw.cpus = 2
@@ -21,8 +21,8 @@ Vagrant.configure("2") do |config|
   # Login Node (Network 1)
   config.vm.define "login-node" do |login|
     login.vm.hostname = "login-node"
-    login.vm.network "private_network", ip: "192.168.50.10", virtualbox__intnet: "network1"
-    login.vm.provider "vmware_workstation" do |vmw|
+    login.vm.network "private_network", ip: "192.168.50.10", vsphere__intnet: "network1"
+    login.vm.provider "vsphere" do |vmw|
       vmw.name = "login-node"
       vmw.memory = "1024"
       vmw.cpus = 2
@@ -32,8 +32,8 @@ Vagrant.configure("2") do |config|
   # Management Node (Network 1)
   config.vm.define "management-node" do |mgmt|
     mgmt.vm.hostname = "management-node"
-    mgmt.vm.network "private_network", ip: "192.168.50.11", virtualbox__intnet: "network1"
-    mgmt.vm.provider "vmware_workstation" do |vmw|
+    mgmt.vm.network "private_network", ip: "192.168.50.11", vsphere__intnet: "network1"
+    mgmt.vm.provider "vsphere" do |vmw|
       vmw.name = "management-node"
       vmw.memory = "1024"
       vmw.cpus = 2
@@ -43,8 +43,8 @@ Vagrant.configure("2") do |config|
   # Controller Node (Network 1) - Slurm Controller + NFS Server
   config.vm.define "controller-node" do |ctrl|
     ctrl.vm.hostname = "controller-node"
-    ctrl.vm.network "private_network", ip: "192.168.50.12", virtualbox__intnet: "network1"
-    ctrl.vm.provider "vmware_workstation" do |vmw|
+    ctrl.vm.network "private_network", ip: "192.168.50.12", vsphere__intnet: "network1"
+    ctrl.vm.provider "vsphere" do |vmw|
       vmw.name = "controller-node"
       vmw.memory = "2048"
       vmw.cpus = 4
@@ -54,8 +54,8 @@ Vagrant.configure("2") do |config|
   # SlurmDB Node (Network 1) - MariaDB
   config.vm.define "slurmdb-node" do |db|
     db.vm.hostname = "slurmdb-node"
-    db.vm.network "private_network", ip: "192.168.50.13", virtualbox__intnet: "network1"
-    db.vm.provider "vmware_workstation" do |vmw|
+    db.vm.network "private_network", ip: "192.168.50.13", vsphere__intnet: "network1"
+    db.vm.provider "vsphere" do |vmw|
       vmw.name = "slurmdb-node"
       vmw.memory = "1024"
       vmw.cpus = 2
@@ -65,8 +65,8 @@ Vagrant.configure("2") do |config|
   # Compute Node 1 (Network 1)
   config.vm.define "compute-node-1" do |comp1|
     comp1.vm.hostname = "compute-node-1"
-    comp1.vm.network "private_network", ip: "192.168.50.14", virtualbox__intnet: "network1"
-    comp1.vm.provider "vmware_workstation" do |vmw|
+    comp1.vm.network "private_network", ip: "192.168.50.14", vsphere__intnet: "network1"
+    comp1.vm.provider "vsphere" do |vmw|
       vmw.name = "compute-node-1"
       vmw.memory = "2048"
       vmw.cpus = 4
@@ -76,8 +76,8 @@ Vagrant.configure("2") do |config|
   # Compute Node 2 (Network 1)
   config.vm.define "compute-node-2" do |comp2|
     comp2.vm.hostname = "compute-node-2"
-    comp2.vm.network "private_network", ip: "192.168.50.15", virtualbox__intnet: "network1"
-    comp2.vm.provider "vmware_workstation" do |vmw|
+    comp2.vm.network "private_network", ip: "192.168.50.15", vsphere__intnet: "network1"
+    comp2.vm.provider "vsphere" do |vmw|
       vmw.name = "compute-node-2"
       vmw.memory = "2048"
       vmw.cpus = 4
@@ -87,8 +87,8 @@ Vagrant.configure("2") do |config|
   # NoSQL Node 1 (Network 1) - MongoDB Primary
   config.vm.define "nosql-node-1" do |nosql1|
     nosql1.vm.hostname = "nosql-node-1"
-    nosql1.vm.network "private_network", ip: "192.168.50.16", virtualbox__intnet: "network1"
-    nosql1.vm.provider "vmware_workstation" do |vmw|
+    nosql1.vm.network "private_network", ip: "192.168.50.16", vsphere__intnet: "network1"
+    nosql1.vm.provider "vsphere" do |vmw|
       vmw.name = "nosql-node-1"
       vmw.memory = "1024"
       vmw.cpus = 2
@@ -98,8 +98,8 @@ Vagrant.configure("2") do |config|
   # Compute Node 3 (Network 2) - Cloud simulation
   config.vm.define "compute-node-3" do |comp3|
     comp3.vm.hostname = "compute-node-3"
-    comp3.vm.network "private_network", ip: "192.168.60.10", virtualbox__intnet: "network2"
-    comp3.vm.provider "vmware_workstation" do |vmw|
+    comp3.vm.network "private_network", ip: "192.168.60.10", vsphere__intnet: "network2"
+    comp3.vm.provider "vsphere" do |vmw|
       vmw.name = "compute-node-3"
       vmw.memory = "2048"
       vmw.cpus = 4
@@ -109,8 +109,8 @@ Vagrant.configure("2") do |config|
   # Compute Node 4 (Network 2) - Cloud simulation
   config.vm.define "compute-node-4" do |comp4|
     comp4.vm.hostname = "compute-node-4"
-    comp4.vm.network "private_network", ip: "192.168.60.11", virtualbox__intnet: "network2"
-    comp4.vm.provider "vmware_workstation" do |vmw|
+    comp4.vm.network "private_network", ip: "192.168.60.11", vsphere__intnet: "network2"
+    comp4.vm.provider "vsphere" do |vmw|
       vmw.name = "compute-node-4"
       vmw.memory = "2048"
       vmw.cpus = 4
@@ -120,8 +120,8 @@ Vagrant.configure("2") do |config|
   # NoSQL Node 2 (Network 2) - MongoDB Replica
   config.vm.define "nosql-node-2" do |nosql2|
     nosql2.vm.hostname = "nosql-node-2"
-    nosql2.vm.network "private_network", ip: "192.168.60.12", virtualbox__intnet: "network2"
-    nosql2.vm.provider "vmware_workstation" do |vmw|
+    nosql2.vm.network "private_network", ip: "192.168.60.12", vsphere__intnet: "network2"
+    nosql2.vm.provider "vsphere" do |vmw|
       vmw.name = "nosql-node-2"
       vmw.memory = "1024"
       vmw.cpus = 2

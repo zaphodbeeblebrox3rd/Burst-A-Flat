@@ -9,10 +9,20 @@
     munge_key: "{{ lookup('password', '/tmp/munge_key length=32 chars=ascii_letters,digits') }}"
     
   pre_tasks:
-    - name: Update package cache
+    - name: Update package cache and upgrade all packages
       ansible.builtin.apt:
         update_cache: yes
-        cache_valid_time: 3600
+        upgrade: dist
+        autoremove: yes
+        autoclean: yes
+
+    - name: Reboot system after updates
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+        connect_timeout: 5
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+      when: ansible_distribution == "Ubuntu"
 
     - name: Install common packages
       ansible.builtin.package:
@@ -31,10 +41,6 @@
     - role: common
     - role: munge
     - role: slurm
-    - role: nfs
-    - role: mariadb
-    - role: mongodb
-    - role: r_environment
 
 - name: Configure Slurm Controller
   hosts: slurm_controllers

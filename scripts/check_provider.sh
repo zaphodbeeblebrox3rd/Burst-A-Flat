@@ -32,9 +32,9 @@ fi
 echo ""
 
 # Check VMware
-echo "=== VMware Check ==="
+echo "=== vSphere Check ==="
 if command -v vmrun &> /dev/null; then
-    echo "✅ VMware Workstation found"
+    echo "✅ vSphere found"
     
     # Check if VMware is running
     if vmrun list &> /dev/null; then
@@ -42,7 +42,7 @@ if command -v vmrun &> /dev/null; then
         echo "   Running VMs: $running_vms"
     fi
 else
-    echo "❌ VMware Workstation not found"
+    echo "❌ vSphere not found"
 fi
 echo ""
 
@@ -81,11 +81,11 @@ if [ "$current_provider" = "virtualbox" ]; then
     else
         echo "❌ VirtualBox not installed. Please install VirtualBox or switch to VMware."
     fi
-elif [ "$current_provider" = "vmware_workstation" ]; then
-    if command -v vmrun &> /dev/null && vagrant plugin list | grep -q "vagrant-vmware-workstation"; then
-        echo "✅ Ready to use VMware Workstation"
+elif [ "$current_provider" = "vsphere" ]; then
+    if command -v vmrun &> /dev/null && vagrant plugin list | grep -q "vagrant-vsphere"; then
+        echo "✅ Ready to use vSphere"
     else
-        echo "❌ VMware Workstation or plugin not properly installed."
+        echo "❌ vSphere or plugin not properly installed."
     fi
 else
     echo "❌ Unknown provider: $current_provider"
