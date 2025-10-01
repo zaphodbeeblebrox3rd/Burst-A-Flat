@@ -85,23 +85,18 @@ graph TB
 - **Vagrant** (latest version)
 - **Ansible** (2.9+)
 
-### Virtualization Provider (Choose One)
-- **VirtualBox** (free, recommended for beginners)
-  - VirtualBox 6.0+
-  - VirtualBox Extension Pack (recommended)
-- **vSphere** (enterprise, better performance)
-  - vSphere 6.5+
-  - Vagrant vSphere plugin: `vagrant plugin install vagrant-vsphere`
+### Virtualization Provider
+- **KVM/libvirt** (Linux, recommended for cloud burst simulation)
+  - KVM support in kernel
+  - libvirt daemon and tools
+  - Vagrant libvirt plugin: `vagrant plugin install vagrant-libvirt`
 
 ## Quick Start
 
-### Step 1: Choose Your Provider
+### Step 1: Setup KVM/libvirt
 ```bash
-# Linux/Mac
+# Linux only
 ./setup.sh
-
-# Windows
-setup.bat
 ```
 
 ### Step 2: Deploy Infrastructure
@@ -126,38 +121,22 @@ sinfo
 sbatch scripts/r_workload_demo.sh
 ```
 
-## Provider Flexibility
+## KVM/libvirt Benefits
 
-This project supports both VirtualBox and vSphere, allowing you to choose based on your needs:
+This project uses KVM/libvirt for optimal cloud burst simulation:
 
-### VirtualBox (Recommended for Beginners)
-- ✅ **Free** and open source
-- ✅ Easy to install and configure
-- ✅ Good for learning and development
-- ⚠️ Lower performance than VMware
-- ⚠️ May have issues with WSL on Windows
+### KVM/libvirt Advantages
+- ✅ **Native Linux performance** with hardware virtualization
+- ✅ **Advanced networking** with libvirt networks and bridges
+- ✅ **Better resource management** and isolation
+- ✅ **Cloud-native** - same technology used in production clouds
+- ✅ **Free and open source**
 
-### vSphere (Recommended for Production)
-- ✅ **Better performance** and stability
-- ✅ Better Windows/WSL compatibility
-- ✅ More advanced networking features
-- ❌ Requires paid license
-- ❌ More complex setup
-
-### Switching Providers
-You can easily switch between providers:
-
-```bash
-# Switch to VirtualBox
-bash scripts/generate_vagrantfile.sh virtualbox
-
-# Switch to vSphere
-bash scripts/generate_vagrantfile.sh vsphere
-
-# Or use the setup script
-./setup.sh  # Linux/Mac
-setup.bat   # Windows
-```
+### Networking Features
+- **Two separate networks** (on-premises and cloud simulation)
+- **NAT gateway** through controller node for internet access
+- **Internal networking** for realistic cloud burst scenarios
+- **Host-to-VM communication** for Ansible management
 
 ## Usage
 
@@ -208,39 +187,41 @@ The included R workload demonstrates:
 
 ### Installation and Setup
 
-#### Vagrant Version Compatibility Issues
+#### KVM/libvirt Setup Issues
 
-If you encounter errors like "The provider 'virtualbox' that was requested to back the machine is reporting that it isn't usable on this system" or see messages about unsupported VirtualBox versions, this indicates a version compatibility issue between Vagrant and VirtualBox.
+If you encounter errors like "The provider 'libvirt' that was requested to back the machine is reporting that it isn't usable on this system", this indicates a KVM/libvirt setup issue.
 
-**Solution**: Install the latest version of Vagrant from the official HashiCorp website:
+**Solution**: Ensure KVM/libvirt is properly configured:
 
-1. **Visit the official download page**: https://www.vagrantup.com/downloads
-2. **Download the latest version** for your operating system
-3. **Install according to your OS**:
-   - **Linux**: Download the `.deb` or `.rpm` package and install with your package manager
-   - **macOS**: Download the `.dmg` file and follow the installation wizard
-   - **Windows**: Download the `.msi` installer and run as administrator
-4. **Verify the installation**:
+1. **Check KVM support**:
    ```bash
-   vagrant --version
+   lsmod | grep kvm
    ```
-5. **Clean up any existing Vagrant state**:
+2. **Check libvirt status**:
    ```bash
-   vagrant destroy -f
-   rm -rf .vagrant/
+   sudo systemctl status libvirtd
    ```
-6. **Regenerate your Vagrantfile**:
+3. **Verify user groups**:
    ```bash
-   ./setup.sh  # Choose your preferred provider
+   groups $USER
+   # Should include 'libvirt' and 'kvm'
    ```
-7. **Deploy again**:
+4. **Install missing packages**:
    ```bash
-   vagrant up
+   sudo apt install qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager
+   ```
+5. **Add user to groups**:
+   ```bash
+   sudo usermod -a -G libvirt $USER
+   sudo usermod -a -G kvm $USER
+   ```
+6. **Log out and back in** (or reboot) for group changes to take effect
+7. **Install vagrant-libvirt plugin**:
+   ```bash
+   vagrant plugin install vagrant-libvirt
    ```
 
-**Why this happens**: Older versions of Vagrant may not support newer versions of VirtualBox. For example, Vagrant 2.3.4 only supports VirtualBox versions up to 7.0, but if you have VirtualBox 7.2.2 installed, you'll get compatibility errors.
-
-**Alternative**: If you can't update Vagrant, you can use vSphere instead, which typically has better version compatibility.
+**Why this happens**: KVM/libvirt requires proper kernel modules, user permissions, and service configuration. The setup script handles most of this automatically.
 
 ### Common Issues
 

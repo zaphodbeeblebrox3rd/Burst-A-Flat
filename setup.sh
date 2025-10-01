@@ -1,53 +1,64 @@
 #!/bin/bash
 # Burst-A-Flat Setup Script
-# Allows users to choose between VirtualBox and vSphere
+# Sets up KVM/libvirt for cloud burst simulation
 
 set -e
 
 echo "=== Burst-A-Flat Setup ==="
-echo "Choose your virtualization provider:"
-echo "1) VirtualBox (default)"
-echo "2) vSphere"
-echo "3) Exit"
+echo "Setting up KVM/libvirt for cloud burst simulation..."
 echo ""
 
-read -p "Enter your choice (1-3): " choice
+# Check if running as root
+if [[ $EUID -eq 0 ]]; then
+   echo "❌ This script should not be run as root"
+   echo "Please run as a regular user (sudo will be used when needed)"
+   exit 1
+fi
 
-case $choice in
-    1)
-        echo "Setting up for VirtualBox..."
-        bash scripts/generate_vagrantfile.sh virtualbox
-        echo "✅ VirtualBox Vagrantfile generated"
-        ;;
-    2)
-        echo "Setting up for vSphere..."
-        bash scripts/generate_vagrantfile.sh vsphere
-        echo "✅ vSphere Vagrantfile generated"
-        ;;
-    3)
-        echo "Exiting..."
-        exit 0
-        ;;
-    *)
-        echo "Invalid choice. Using VirtualBox as default..."
-        bash scripts/generate_vagrantfile.sh virtualbox
-        echo "✅ VirtualBox Vagrantfile generated"
-        ;;
-esac
+# Check if KVM is available
+if ! lsmod | grep -q kvm; then
+    echo "❌ KVM module not loaded"
+    echo "Please ensure KVM is available on your system"
+    exit 1
+fi
+
+echo "✅ KVM module detected"
+
+# Install required packages
+echo "📦 Installing KVM/libvirt packages..."
+sudo apt update
+sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils virt-manager
+
+# Add user to libvirt group
+echo "👤 Adding user to libvirt group..."
+sudo usermod -a -G libvirt $USER
+sudo usermod -a -G kvm $USER
+
+# Install vagrant-libvirt plugin
+echo "🔌 Installing vagrant-libvirt plugin..."
+vagrant plugin install vagrant-libvirt
+
+# Stop VirtualBox services to avoid conflicts
+echo "🛑 Stopping VirtualBox services..."
+sudo systemctl stop vboxdrv 2>/dev/null || true
+sudo systemctl disable vboxdrv 2>/dev/null || true
+
+# Generate Vagrantfile for KVM
+echo "📝 Generating Vagrantfile for KVM/libvirt..."
+bash scripts/generate_vagrantfile.sh kvm
 
 echo ""
 echo "=== Setup Complete ==="
-echo "Your Vagrantfile has been generated for your chosen provider."
+echo "✅ KVM/libvirt setup complete"
+echo ""
+echo "⚠️  IMPORTANT: You need to log out and log back in (or reboot) for group changes to take effect"
 echo ""
 echo "Next steps:"
-echo "1. Make sure your chosen virtualization software is installed"
+echo "1. Log out and log back in (or reboot)"
 echo "2. Run: vagrant up"
 echo "3. Configure the cluster: ansible-playbook -i inventory/hosts playbooks/site.yml"
 echo ""
-echo "For VirtualBox users:"
-echo "  - VirtualBox must be installed"
-echo "  - VirtualBox Extension Pack recommended"
-echo ""
-echo "For vSphere users:"
-echo "  - vSphere must be installed"
-echo "  - Vagrant vSphere plugin: vagrant plugin install vagrant-vsphere"
+echo "For troubleshooting:"
+echo "  - Check libvirt status: sudo systemctl status libvirtd"
+echo "  - Check user groups: groups $USER"
+echo "  - Check KVM: lsmod | grep kvm"

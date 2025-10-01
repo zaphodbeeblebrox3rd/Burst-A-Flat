@@ -9,9 +9,7 @@ Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/jammy64"
   config.vm.box_check_update = false
   
-  # Network configuration
-  config.vm.network "private_network", ip: "192.168.56.10", virtualbox__hostonly: "network1"
-  config.vm.network "private_network", ip: "192.168.57.10", virtualbox__hostonly: "network2"
+  # Network configuration - no global networks, each VM defines its own
   
   # Provider configuration
   config.vm.provider "virtualbox" do |provider|
@@ -24,15 +22,22 @@ Vagrant.configure("2") do |config|
   # login-node - 
   config.vm.define "login-node" do |login_node|
     login_node.vm.hostname = "login-node"
-    login_node.vm.network "private_network", ip: "192.168.56.10", virtualbox__hostonly: "network1"
+    login_node.vm.network "private_network", ip: "192.168.50.10", virtualbox__intnet: "onprem-network"
+    # Add NAT for internet access
+    login_node.vm.network "private_network", type: "nat"
+    # Copy SSH public key from host to VM
+    login_node.vm.provision "file", source: "~/.ssh/id_ed25519.pub", destination: "/tmp/host_key.pub"
     login_node.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
       chmod 700 /home/vagrant/.ssh
       
-      # Add user's SSH key if not already present
-      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
-        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      # Add host SSH key if it exists
+      if [ -f /tmp/host_key.pub ]; then
+        if ! grep -q "$(cat /tmp/host_key.pub)" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+          cat /tmp/host_key.pub >> /home/vagrant/.ssh/authorized_keys
+        fi
+        rm /tmp/host_key.pub
       fi
       
       # Set proper ownership and permissions
@@ -52,15 +57,20 @@ Vagrant.configure("2") do |config|
   # management-node - 
   config.vm.define "management-node" do |management_node|
     management_node.vm.hostname = "management-node"
-    management_node.vm.network "private_network", ip: "192.168.56.11", virtualbox__hostonly: "network1"
+    management_node.vm.network "private_network", ip: "192.168.50.11", virtualbox__hostonly: "network1"
+    # Copy SSH public key from host to VM
+    management_node.vm.provision "file", source: "~/.ssh/id_ed25519.pub", destination: "/tmp/host_key.pub"
     management_node.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
       chmod 700 /home/vagrant/.ssh
       
-      # Add user's SSH key if not already present
-      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
-        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      # Add host SSH key if it exists
+      if [ -f /tmp/host_key.pub ]; then
+        if ! grep -q "$(cat /tmp/host_key.pub)" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+          cat /tmp/host_key.pub >> /home/vagrant/.ssh/authorized_keys
+        fi
+        rm /tmp/host_key.pub
       fi
       
       # Set proper ownership and permissions
@@ -80,15 +90,22 @@ Vagrant.configure("2") do |config|
   # controller-node - 
   config.vm.define "controller-node" do |controller_node|
     controller_node.vm.hostname = "controller-node"
-    controller_node.vm.network "private_network", ip: "192.168.56.12", virtualbox__hostonly: "network1"
+    controller_node.vm.network "private_network", ip: "192.168.50.12", virtualbox__hostonly: "network1"
+    # Add NAT for internet access (controller acts as gateway)
+    controller_node.vm.network "private_network", type: "nat"
+    # Copy SSH public key from host to VM
+    controller_node.vm.provision "file", source: "~/.ssh/id_ed25519.pub", destination: "/tmp/host_key.pub"
     controller_node.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
       chmod 700 /home/vagrant/.ssh
       
-      # Add user's SSH key if not already present
-      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
-        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      # Add host SSH key if it exists
+      if [ -f /tmp/host_key.pub ]; then
+        if ! grep -q "$(cat /tmp/host_key.pub)" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+          cat /tmp/host_key.pub >> /home/vagrant/.ssh/authorized_keys
+        fi
+        rm /tmp/host_key.pub
       fi
       
       # Set proper ownership and permissions
@@ -108,15 +125,20 @@ Vagrant.configure("2") do |config|
   # slurmdb-node - 
   config.vm.define "slurmdb-node" do |slurmdb_node|
     slurmdb_node.vm.hostname = "slurmdb-node"
-    slurmdb_node.vm.network "private_network", ip: "192.168.56.13", virtualbox__hostonly: "network1"
+    slurmdb_node.vm.network "private_network", ip: "192.168.50.13", virtualbox__hostonly: "network1"
+    # Copy SSH public key from host to VM
+    slurmdb_node.vm.provision "file", source: "~/.ssh/id_ed25519.pub", destination: "/tmp/host_key.pub"
     slurmdb_node.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
       chmod 700 /home/vagrant/.ssh
       
-      # Add user's SSH key if not already present
-      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
-        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      # Add host SSH key if it exists
+      if [ -f /tmp/host_key.pub ]; then
+        if ! grep -q "$(cat /tmp/host_key.pub)" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+          cat /tmp/host_key.pub >> /home/vagrant/.ssh/authorized_keys
+        fi
+        rm /tmp/host_key.pub
       fi
       
       # Set proper ownership and permissions
@@ -136,15 +158,20 @@ Vagrant.configure("2") do |config|
   # compute-node-1 - 
   config.vm.define "compute-node-1" do |compute_node_1|
     compute_node_1.vm.hostname = "compute-node-1"
-    compute_node_1.vm.network "private_network", ip: "192.168.56.14", virtualbox__hostonly: "network1"
+    compute_node_1.vm.network "private_network", ip: "192.168.50.14", virtualbox__hostonly: "network1"
+    # Copy SSH public key from host to VM
+    compute_node_1.vm.provision "file", source: "~/.ssh/id_ed25519.pub", destination: "/tmp/host_key.pub"
     compute_node_1.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
       chmod 700 /home/vagrant/.ssh
       
-      # Add user's SSH key if not already present
-      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
-        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      # Add host SSH key if it exists
+      if [ -f /tmp/host_key.pub ]; then
+        if ! grep -q "$(cat /tmp/host_key.pub)" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+          cat /tmp/host_key.pub >> /home/vagrant/.ssh/authorized_keys
+        fi
+        rm /tmp/host_key.pub
       fi
       
       # Set proper ownership and permissions
@@ -164,15 +191,20 @@ Vagrant.configure("2") do |config|
   # compute-node-2 - 
   config.vm.define "compute-node-2" do |compute_node_2|
     compute_node_2.vm.hostname = "compute-node-2"
-    compute_node_2.vm.network "private_network", ip: "192.168.56.15", virtualbox__hostonly: "network1"
+    compute_node_2.vm.network "private_network", ip: "192.168.50.15", virtualbox__hostonly: "network1"
+    # Copy SSH public key from host to VM
+    compute_node_2.vm.provision "file", source: "~/.ssh/id_ed25519.pub", destination: "/tmp/host_key.pub"
     compute_node_2.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
       chmod 700 /home/vagrant/.ssh
       
-      # Add user's SSH key if not already present
-      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
-        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      # Add host SSH key if it exists
+      if [ -f /tmp/host_key.pub ]; then
+        if ! grep -q "$(cat /tmp/host_key.pub)" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+          cat /tmp/host_key.pub >> /home/vagrant/.ssh/authorized_keys
+        fi
+        rm /tmp/host_key.pub
       fi
       
       # Set proper ownership and permissions
@@ -192,15 +224,20 @@ Vagrant.configure("2") do |config|
   # nosql-node-1 - 
   config.vm.define "nosql-node-1" do |nosql_node_1|
     nosql_node_1.vm.hostname = "nosql-node-1"
-    nosql_node_1.vm.network "private_network", ip: "192.168.56.16", virtualbox__hostonly: "network1"
+    nosql_node_1.vm.network "private_network", ip: "192.168.50.16", virtualbox__hostonly: "network1"
+    # Copy SSH public key from host to VM
+    nosql_node_1.vm.provision "file", source: "~/.ssh/id_ed25519.pub", destination: "/tmp/host_key.pub"
     nosql_node_1.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
       chmod 700 /home/vagrant/.ssh
       
-      # Add user's SSH key if not already present
-      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
-        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      # Add host SSH key if it exists
+      if [ -f /tmp/host_key.pub ]; then
+        if ! grep -q "$(cat /tmp/host_key.pub)" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+          cat /tmp/host_key.pub >> /home/vagrant/.ssh/authorized_keys
+        fi
+        rm /tmp/host_key.pub
       fi
       
       # Set proper ownership and permissions
@@ -220,15 +257,20 @@ Vagrant.configure("2") do |config|
   # compute-node-3 - 
   config.vm.define "compute-node-3" do |compute_node_3|
     compute_node_3.vm.hostname = "compute-node-3"
-    compute_node_3.vm.network "private_network", ip: "192.168.57.10", virtualbox__hostonly: "network2"
+    compute_node_3.vm.network "private_network", ip: "192.168.60.10", virtualbox__hostonly: "network2"
+    # Copy SSH public key from host to VM
+    compute_node_3.vm.provision "file", source: "~/.ssh/id_ed25519.pub", destination: "/tmp/host_key.pub"
     compute_node_3.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
       chmod 700 /home/vagrant/.ssh
       
-      # Add user's SSH key if not already present
-      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
-        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      # Add host SSH key if it exists
+      if [ -f /tmp/host_key.pub ]; then
+        if ! grep -q "$(cat /tmp/host_key.pub)" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+          cat /tmp/host_key.pub >> /home/vagrant/.ssh/authorized_keys
+        fi
+        rm /tmp/host_key.pub
       fi
       
       # Set proper ownership and permissions
@@ -248,15 +290,20 @@ Vagrant.configure("2") do |config|
   # compute-node-4 - 
   config.vm.define "compute-node-4" do |compute_node_4|
     compute_node_4.vm.hostname = "compute-node-4"
-    compute_node_4.vm.network "private_network", ip: "192.168.57.11", virtualbox__hostonly: "network2"
+    compute_node_4.vm.network "private_network", ip: "192.168.60.11", virtualbox__hostonly: "network2"
+    # Copy SSH public key from host to VM
+    compute_node_4.vm.provision "file", source: "~/.ssh/id_ed25519.pub", destination: "/tmp/host_key.pub"
     compute_node_4.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
       chmod 700 /home/vagrant/.ssh
       
-      # Add user's SSH key if not already present
-      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
-        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      # Add host SSH key if it exists
+      if [ -f /tmp/host_key.pub ]; then
+        if ! grep -q "$(cat /tmp/host_key.pub)" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+          cat /tmp/host_key.pub >> /home/vagrant/.ssh/authorized_keys
+        fi
+        rm /tmp/host_key.pub
       fi
       
       # Set proper ownership and permissions
@@ -276,15 +323,20 @@ Vagrant.configure("2") do |config|
   # nosql-node-2 - 
   config.vm.define "nosql-node-2" do |nosql_node_2|
     nosql_node_2.vm.hostname = "nosql-node-2"
-    nosql_node_2.vm.network "private_network", ip: "192.168.57.12", virtualbox__hostonly: "network2"
+    nosql_node_2.vm.network "private_network", ip: "192.168.60.12", virtualbox__hostonly: "network2"
+    # Copy SSH public key from host to VM
+    nosql_node_2.vm.provision "file", source: "~/.ssh/id_ed25519.pub", destination: "/tmp/host_key.pub"
     nosql_node_2.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
       chmod 700 /home/vagrant/.ssh
       
-      # Add user's SSH key if not already present
-      if ! grep -q "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
-        echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDoh/i0yGCErnC/rwJV74qlQ7V8T+asWSSm3raYsfKJo erichoy@gmail.com" >> /home/vagrant/.ssh/authorized_keys
+      # Add host SSH key if it exists
+      if [ -f /tmp/host_key.pub ]; then
+        if ! grep -q "$(cat /tmp/host_key.pub)" /home/vagrant/.ssh/authorized_keys 2>/dev/null; then
+          cat /tmp/host_key.pub >> /home/vagrant/.ssh/authorized_keys
+        fi
+        rm /tmp/host_key.pub
       fi
       
       # Set proper ownership and permissions

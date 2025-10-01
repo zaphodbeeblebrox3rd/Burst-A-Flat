@@ -103,12 +103,12 @@ fi
 # Get provider from command line argument
 PROVIDER="$1"
 if [[ -z "$PROVIDER" ]]; then
-    echo "Usage: $0 <virtualbox|vsphere>"
+    echo "Usage: $0 <virtualbox|vsphere|kvm>"
     exit 1
 fi
 
-if [[ "$PROVIDER" != "virtualbox" && "$PROVIDER" != "vsphere" ]]; then
-    echo "Error: Invalid provider. Use 'virtualbox' or 'vsphere'"
+if [[ "$PROVIDER" != "virtualbox" && "$PROVIDER" != "vsphere" && "$PROVIDER" != "kvm" ]]; then
+    echo "Error: Invalid provider. Use 'virtualbox', 'vsphere', or 'kvm'"
     exit 1
 fi
 
@@ -125,6 +125,10 @@ if [[ "$PROVIDER" == "virtualbox" ]]; then
     NETWORK1_OPTION="virtualbox__hostonly"
     NETWORK2_OPTION="virtualbox__hostonly"
     PROVIDER_NAME="virtualbox"
+elif [[ "$PROVIDER" == "kvm" ]]; then
+    NETWORK1_OPTION="libvirt__network_name"
+    NETWORK2_OPTION="libvirt__network_name"
+    PROVIDER_NAME="libvirt"
 else
     NETWORK1_OPTION="vsphere__intnet"
     NETWORK2_OPTION="vsphere__intnet"
@@ -145,8 +149,8 @@ Vagrant.configure("2") do |config|
   config.vm.box_check_update = false
   
   # Network configuration
-  config.vm.network "$NETWORK_TYPE", ip: "192.168.56.10", $NETWORK1_OPTION: "network1"
-  config.vm.network "$NETWORK_TYPE", ip: "192.168.57.10", $NETWORK2_OPTION: "network2"
+  config.vm.network "$NETWORK_TYPE", ip: "192.168.50.10", $NETWORK1_OPTION: "onprem-network"
+  config.vm.network "$NETWORK_TYPE", ip: "192.168.60.10", $NETWORK2_OPTION: "cloud-network"
   
   # Provider configuration
   config.vm.provider "$PROVIDER_NAME" do |provider|
@@ -182,11 +186,11 @@ for vm_name in $VMS; do
     if [[ -n "$IP_NETWORK1" ]]; then
         NETWORK_IP="$IP_NETWORK1"
         NETWORK_OPTION="$NETWORK1_OPTION"
-        NETWORK_NUM="1"
+        NETWORK_NAME="onprem-network"
     else
         NETWORK_IP="$IP_NETWORK2"
         NETWORK_OPTION="$NETWORK2_OPTION"
-        NETWORK_NUM="2"
+        NETWORK_NAME="cloud-network"
     fi
     
     # Convert VM name to variable name (replace hyphens with underscores)
@@ -197,7 +201,7 @@ for vm_name in $VMS; do
   # $HOSTNAME - $ROLES
   config.vm.define "$vm_name" do |$VM_VAR|
     $VM_VAR.vm.hostname = "$HOSTNAME"
-    $VM_VAR.vm.network "$NETWORK_TYPE", ip: "$NETWORK_IP", $NETWORK_OPTION: "network$NETWORK_NUM"
+    $VM_VAR.vm.network "$NETWORK_TYPE", ip: "$NETWORK_IP", $NETWORK_OPTION: "$NETWORK_NAME"
 EOF
 
     # Add SSH key configuration - always add user key if available
@@ -223,11 +227,31 @@ EOF
 EOF
     fi
 
+    # Add KVM-specific networking for controller node (gateway)
+    if [[ "$vm_name" == "controller-node" && "$PROVIDER" == "kvm" ]]; then
+        cat >> "$VAGRANTFILE" << EOF
+    # Add NAT for internet access (controller acts as gateway)
+    $VM_VAR.vm.network "private_network", type: "nat"
+EOF
+    fi
+
     cat >> "$VAGRANTFILE" << EOF
     $VM_VAR.vm.provider "$PROVIDER_NAME" do |provider|
       provider.name = "$vm_name"
       provider.memory = "$MEMORY"
       provider.cpus = $CPUS
+EOF
+
+    # Add KVM-specific provider options
+    if [[ "$PROVIDER" == "kvm" ]]; then
+        cat >> "$VAGRANTFILE" << EOF
+      # KVM-specific options
+      provider.graphics_type = "none"
+      provider.video_type = "qxl"
+EOF
+    fi
+
+    cat >> "$VAGRANTFILE" << EOF
     end
   end
 

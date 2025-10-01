@@ -1,16 +1,16 @@
 [network1]
-login-node ansible_host=192.168.56.10
-management-node ansible_host=192.168.56.11
-controller-node ansible_host=192.168.56.12
-slurmdb-node ansible_host=192.168.56.13
-compute-node-1 ansible_host=192.168.56.14
-compute-node-2 ansible_host=192.168.56.15
-nosql-node-1 ansible_host=192.168.56.16
+login-node ansible_host=192.168.50.10
+management-node ansible_host=192.168.50.11
+controller-node ansible_host=192.168.50.12
+slurmdb-node ansible_host=192.168.50.13
+compute-node-1 ansible_host=192.168.50.14
+compute-node-2 ansible_host=192.168.50.15
+nosql-node-1 ansible_host=192.168.50.16
 
 [network2]
-compute-node-3 ansible_host=192.168.57.10
-compute-node-4 ansible_host=192.168.57.11
-nosql-node-2 ansible_host=192.168.57.12
+compute-node-3 ansible_host=192.168.60.10
+compute-node-4 ansible_host=192.168.60.11
+nosql-node-2 ansible_host=192.168.60.12
 
 [slurm_controllers]
 controller-node
@@ -46,4 +46,4 @@ nosql-node-2
 ansible_user=vagrant
 # Try user's SSH key first, fall back to Vagrant key if needed
 ansible_ssh_private_key_file=~/.ssh/id_ed25519
-ansible_ssh_common_args='-o StrictHostKeyChecking=no -o IdentitiesOnly=yes'
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o LogLevel=ERROR'
