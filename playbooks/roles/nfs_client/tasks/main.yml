@@ -1,9 +1,12 @@
 ---
 - name: Install NFS client
-  ansible.builtin.package:
+  ansible.builtin.apt:
     name:
       - nfs-common
     state: present
+    lock_timeout: 300
+  retries: 3
+  delay: 90
 
 - name: Create mount point
   ansible.builtin.file:

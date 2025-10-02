@@ -1,10 +1,17 @@
 # Burst-A-Flat Configuration
 # Choose your virtualization provider: virtualbox or vsphere
 
-provider: "virtualbox"
+provider: "kvm"
 
 # Provider-specific settings
 providers:
+  kvm:
+    box: "generic/ubuntu2204"
+    network_type: "private_network"
+    network_options:
+      network1: "libvirt__network_name"
+      network2: "libvirt__network_name"
+  
   virtualbox:
     box: "ubuntu/jammy64"
     network_type: "private_network"
@@ -23,70 +30,71 @@ providers:
 vms:
   login-node:
     hostname: "login-node"
-    ip_network1: "192.168.56.10"
+    ip_network1: "192.168.50.10"
     memory: 1024
     cpus: 2
     roles: ["login", "nfs_client"]
   
   management-node:
     hostname: "management-node"
-    ip_network1: "192.168.56.11"
+    ip_network1: "192.168.50.11"
+    ip_network2: "192.168.60.11"
     memory: 1024
     cpus: 2
-    roles: ["management", "nfs_client"]
+    roles: ["management", "nfs_client", "router"]
   
   controller-node:
     hostname: "controller-node"
-    ip_network1: "192.168.56.12"
+    ip_network1: "192.168.50.12"
     memory: 2048
     cpus: 4
     roles: ["controller", "nfs_server", "slurm_controller"]
   
   slurmdb-node:
     hostname: "slurmdb-node"
-    ip_network1: "192.168.56.13"
+    ip_network1: "192.168.50.13"
     memory: 1024
     cpus: 2
     roles: ["slurmdb", "mariadb"]
   
   compute-node-1:
     hostname: "compute-node-1"
-    ip_network1: "192.168.56.14"
+    ip_network1: "192.168.50.14"
     memory: 2048
     cpus: 4
     roles: ["compute", "nfs_client", "slurm_compute"]
   
   compute-node-2:
     hostname: "compute-node-2"
-    ip_network1: "192.168.56.15"
+    ip_network1: "192.168.50.15"
     memory: 2048
     cpus: 4
     roles: ["compute", "nfs_client", "slurm_compute"]
   
   nosql-node-1:
     hostname: "nosql-node-1"
-    ip_network1: "192.168.56.16"
+    ip_network1: "192.168.50.16"
     memory: 1024
     cpus: 2
     roles: ["nosql", "mongodb_primary"]
   
   compute-node-3:
     hostname: "compute-node-3"
-    ip_network2: "192.168.57.10"
+    ip_network2: "192.168.60.10"
     memory: 2048
     cpus: 4
     roles: ["compute", "slurm_compute"]
   
   compute-node-4:
     hostname: "compute-node-4"
-    ip_network2: "192.168.57.11"
+    ip_network2: "192.168.60.11"
     memory: 2048
     cpus: 4
     roles: ["compute", "slurm_compute"]
   
   nosql-node-2:
     hostname: "nosql-node-2"
-    ip_network2: "192.168.57.12"
+    ip_network2: "192.168.60.12"
     memory: 1024
     cpus: 2
     roles: ["nosql", "mongodb_replica"]

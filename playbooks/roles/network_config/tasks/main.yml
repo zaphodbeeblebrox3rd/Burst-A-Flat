@@ -1,0 +1,30 @@
+---
+- name: Configure default route for network2 hosts
+  ansible.builtin.shell: |
+    # Add default route to management-node if not already present
+    if ! ip route show | grep -q "default via 192.168.60.11"; then
+      ip route add default via 192.168.60.11
+    fi
+  register: route_result
+  changed_when: route_result.rc == 0
+  when: ansible_default_ipv4.address is match("192.168.60.*")
+
+- name: Configure route to network1 via management-node
+  ansible.builtin.shell: |
+    # Add route to network1 via management-node if not already present
+    if ! ip route show | grep -q "192.168.50.0/24 via 192.168.60.11"; then
+      ip route add 192.168.50.0/24 via 192.168.60.11
+    fi
+  register: route_result
+  changed_when: route_result.rc == 0
+  when: ansible_default_ipv4.address is match("192.168.60.*")
+
+- name: Configure route to network2 via management-node for network1 hosts
+  ansible.builtin.shell: |
+    # Add route to network2 via management-node if not already present
+    if ! ip route show | grep -q "192.168.60.0/24 via 192.168.50.11"; then
+      ip route add 192.168.60.0/24 via 192.168.50.11
+    fi
+  register: route_result
+  changed_when: route_result.rc == 0
+  when: ansible_default_ipv4.address is match("192.168.50.*")

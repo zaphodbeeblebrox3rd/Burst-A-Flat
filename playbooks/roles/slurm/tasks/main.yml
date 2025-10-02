@@ -1,6 +1,6 @@
 ---
 - name: Install Slurm dependencies
-  ansible.builtin.package:
+  ansible.builtin.apt:
     name:
       - libmunge-dev
       - libssl-dev
@@ -15,6 +15,9 @@
       - libjwt-dev
       - libmysqlclient-dev
     state: present
+    lock_timeout: 300
+  retries: 3
+  delay: 90
 
 - name: Download and compile Slurm
   ansible.builtin.shell: |
@@ -26,7 +29,7 @@
     make -j$(nproc)
     make install
   args:
-    creates: /usr/local/bin/slurmctld
+    creates: /usr/local/sbin/slurmctld
   become: yes
 
 - name: Create Slurm configuration directory

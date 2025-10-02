@@ -3,39 +3,15 @@
   hosts: all
   become: yes
   gather_facts: yes
-  vars:
-    cluster_name: "burst-a-flat"
-    slurm_version: "23.02.6"
-    munge_key: "{{ lookup('password', '/tmp/munge_key length=32 chars=ascii_letters,digits') }}"
     
   pre_tasks:
-    - name: Update package cache and upgrade all packages
+    - name: Update package cache and upgrade packages
       ansible.builtin.apt:
         update_cache: yes
-        upgrade: dist
+        upgrade: yes
         autoremove: yes
-        autoclean: yes
-
-    - name: Reboot system after updates
-      ansible.builtin.reboot:
-        reboot_timeout: 600
-        connect_timeout: 5
-        pre_reboot_delay: 0
-        post_reboot_delay: 30
-      when: ansible_distribution == "Ubuntu"
-
-    - name: Install common packages
-      ansible.builtin.package:
-        name:
-          - curl
-          - wget
-          - vim
-          - htop
-          - tree
-          - git
-          - build-essential
-          - python3-pip
-        state: present
+      retries: 3
+      delay: 90
 
   roles:
     - role: common
@@ -59,6 +35,18 @@
   become: yes
   roles:
     - role: nfs_server
+
+- name: Configure Router
+  hosts: management-node
+  become: yes
+  roles:
+    - role: router
+
+- name: Configure Network Routes
+  hosts: all
+  become: yes
+  roles:
+    - role: network_config
 
 - name: Configure NFS Clients
   hosts: nfs_clients

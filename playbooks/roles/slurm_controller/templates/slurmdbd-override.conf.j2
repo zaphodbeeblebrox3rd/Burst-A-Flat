@@ -1,0 +1,31 @@
+[Service]
+# Prevent systemd from interfering with SlurmDBD's database operations
+PrivateDevices=false
+ProtectSystem=false
+ProtectHome=false
+NoNewPrivileges=false
+PrivateTmp=false
+ProtectKernelTunables=false
+ProtectKernelModules=false
+ProtectControlGroups=false
+RestrictRealtime=false
+RestrictSUIDSGID=false
+RestrictNamespaces=false
+LockPersonality=false
+MemoryDenyWriteExecute=false
+RestrictAddressFamilies=
+SystemCallFilter=
+SystemCallErrorNumber=
+SystemCallArchitectures=
+RestrictNamespaces=
+PrivateUsers=false
+ProtectKernelLogs=false
+ProtectHostname=false
+ProtectClock=false
+
+# Allow SlurmDBD to manage database connections
+Delegate=yes
+KillMode=mixed
+LimitNOFILE=65536
+LimitNPROC=65536
+LimitMEMLOCK=infinity

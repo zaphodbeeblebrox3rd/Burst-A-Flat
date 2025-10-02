@@ -1,12 +1,4 @@
 ---
-- name: Create Slurm compute configuration
-  ansible.builtin.template:
-    src: slurm.conf.j2
-    dest: /etc/slurm/slurm.conf
-    owner: slurm
-    group: slurm
-    mode: '0644'
-
 - name: Create systemd service for slurmd
   ansible.builtin.template:
     src: slurmd.service.j2

@@ -148,19 +148,34 @@ Vagrant.configure("2") do |config|
   config.vm.box = "$BOX"
   config.vm.box_check_update = false
   
-  # Network configuration
-  config.vm.network "$NETWORK_TYPE", ip: "192.168.50.10", $NETWORK1_OPTION: "onprem-network"
-  config.vm.network "$NETWORK_TYPE", ip: "192.168.60.10", $NETWORK2_OPTION: "cloud-network"
+  # Network configuration - removed global config to avoid conflicts
   
   # Provider configuration
+EOF
+
+# Add provider-specific global configuration
+if [[ "$PROVIDER" == "kvm" ]]; then
+    cat >> "$VAGRANTFILE" << EOF
+  # KVM/libvirt global configuration
+  config.vm.provider "libvirt" do |libvirt|
+    libvirt.memory = "1024"
+    libvirt.cpus = 2
+    libvirt.graphics_type = "none"
+    libvirt.video_type = "qxl"
+    # Suppress fog warnings
+    libvirt.uri = "qemu:///system"
+  end
+EOF
+else
+    cat >> "$VAGRANTFILE" << EOF
   config.vm.provider "$PROVIDER_NAME" do |provider|
     provider.name = "login-node"
     provider.memory = "1024"
     provider.cpus = 2
     provider.gui = false
   end
-
 EOF
+fi
 
 # Check if user has SSH key
 USER_SSH_KEY=""
@@ -183,16 +198,6 @@ for vm_name in $VMS; do
     IP_NETWORK1=$(get_vm_config "$vm_name" "ip_network1" "$CONFIG_FILE")
     IP_NETWORK2=$(get_vm_config "$vm_name" "ip_network2" "$CONFIG_FILE")
     
-    if [[ -n "$IP_NETWORK1" ]]; then
-        NETWORK_IP="$IP_NETWORK1"
-        NETWORK_OPTION="$NETWORK1_OPTION"
-        NETWORK_NAME="onprem-network"
-    else
-        NETWORK_IP="$IP_NETWORK2"
-        NETWORK_OPTION="$NETWORK2_OPTION"
-        NETWORK_NAME="cloud-network"
-    fi
-    
     # Convert VM name to variable name (replace hyphens with underscores)
     VM_VAR=$(echo "$vm_name" | sed 's/-/_/g')
     
@@ -201,8 +206,20 @@ for vm_name in $VMS; do
   # $HOSTNAME - $ROLES
   config.vm.define "$vm_name" do |$VM_VAR|
     $VM_VAR.vm.hostname = "$HOSTNAME"
-    $VM_VAR.vm.network "$NETWORK_TYPE", ip: "$NETWORK_IP", $NETWORK_OPTION: "$NETWORK_NAME"
 EOF
+
+    # Add network interfaces
+    if [[ -n "$IP_NETWORK1" ]]; then
+        cat >> "$VAGRANTFILE" << EOF
+    $VM_VAR.vm.network "$NETWORK_TYPE", ip: "$IP_NETWORK1", $NETWORK1_OPTION: "onprem-network"
+EOF
+    fi
+    
+    if [[ -n "$IP_NETWORK2" ]]; then
+        cat >> "$VAGRANTFILE" << EOF
+    $VM_VAR.vm.network "$NETWORK_TYPE", ip: "$IP_NETWORK2", $NETWORK2_OPTION: "cloud-network"
+EOF
+    fi
 
     # Add SSH key configuration - always add user key if available
     if [[ -n "$USER_SSH_KEY" ]]; then
@@ -231,23 +248,28 @@ EOF
     if [[ "$vm_name" == "controller-node" && "$PROVIDER" == "kvm" ]]; then
         cat >> "$VAGRANTFILE" << EOF
     # Add NAT for internet access (controller acts as gateway)
-    $VM_VAR.vm.network "private_network", type: "nat"
+    $VM_VAR.vm.network "private_network", type: "nat", ip: "10.0.2.10"
 EOF
     fi
 
     cat >> "$VAGRANTFILE" << EOF
     $VM_VAR.vm.provider "$PROVIDER_NAME" do |provider|
+EOF
+
+    # Add provider-specific options
+    if [[ "$PROVIDER" == "kvm" ]]; then
+        cat >> "$VAGRANTFILE" << EOF
+      # KVM/libvirt specific options
+      provider.memory = "$MEMORY"
+      provider.cpus = $CPUS
+      provider.graphics_type = "none"
+      provider.video_type = "qxl"
+EOF
+    else
+        cat >> "$VAGRANTFILE" << EOF
       provider.name = "$vm_name"
       provider.memory = "$MEMORY"
       provider.cpus = $CPUS
-EOF
-
-    # Add KVM-specific provider options
-    if [[ "$PROVIDER" == "kvm" ]]; then
-        cat >> "$VAGRANTFILE" << EOF
-      # KVM-specific options
-      provider.graphics_type = "none"
-      provider.video_type = "qxl"
 EOF
     fi
 

@@ -1,0 +1,72 @@
+---
+- name: Enable IP forwarding
+  ansible.builtin.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    state: present
+    reload: yes
+
+- name: Configure IP forwarding permanently
+  ansible.builtin.lineinfile:
+    path: /etc/sysctl.conf
+    line: 'net.ipv4.ip_forward=1'
+    state: present
+
+- name: Install iptables-persistent
+  ansible.builtin.apt:
+    name: iptables-persistent
+    state: present
+    lock_timeout: 300
+  retries: 3
+  delay: 90
+
+- name: Configure NAT for network2 to network1
+  ansible.builtin.iptables:
+    table: nat
+    chain: POSTROUTING
+    source: 192.168.60.0/24
+    out_interface: "{{ ansible_default_ipv4.interface }}"
+    jump: MASQUERADE
+    comment: "NAT for network2 to network1"
+
+- name: Configure NAT for network1 to network2
+  ansible.builtin.iptables:
+    table: nat
+    chain: POSTROUTING
+    source: 192.168.50.0/24
+    out_interface: "{{ ansible_default_ipv4.interface }}"
+    jump: MASQUERADE
+    comment: "NAT for network1 to network2"
+
+- name: Save iptables rules
+  ansible.builtin.shell: iptables-save > /etc/iptables/rules.v4
+  args:
+    creates: /etc/iptables/rules.v4
+
+- name: Get network interface for network2
+  ansible.builtin.shell: ip addr show | grep -B2 "192.168.60" | grep -o "eth[0-9]*" | head -1
+  register: network2_interface
+  changed_when: false
+
+- name: Get network interface for network1
+  ansible.builtin.shell: ip addr show | grep -B2 "192.168.50" | grep -o "eth[0-9]*" | head -1
+  register: network1_interface
+  changed_when: false
+
+- name: Configure routing for network2
+  ansible.builtin.shell: |
+    # Add route for network2 if not already present
+    if ! ip route show | grep -q "192.168.60.0/24"; then
+      ip route add 192.168.60.0/24 dev {{ network2_interface.stdout }}
+    fi
+  register: route_result
+  changed_when: route_result.rc == 0
+
+- name: Configure routing for network1
+  ansible.builtin.shell: |
+    # Add route for network1 if not already present
+    if ! ip route show | grep -q "192.168.50.0/24"; then
+      ip route add 192.168.50.0/24 dev {{ network1_interface.stdout }}
+    fi
+  register: route_result
+  changed_when: route_result.rc == 0

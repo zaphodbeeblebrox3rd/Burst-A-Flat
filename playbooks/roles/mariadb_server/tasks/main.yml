@@ -1,11 +1,30 @@
 ---
 - name: Install MariaDB server
-  ansible.builtin.package:
+  ansible.builtin.apt:
     name:
       - mariadb-server
       - mariadb-client
       - python3-pymysql
     state: present
+    lock_timeout: 300
+  retries: 3
+  delay: 90
+
+- name: Create systemd override directory for mariadb
+  ansible.builtin.file:
+    path: /etc/systemd/system/mariadb.service.d
+    state: directory
+    mode: '0755'
+
+- name: Create systemd override for mariadb
+  ansible.builtin.template:
+    src: mariadb-override.conf.j2
+    dest: /etc/systemd/system/mariadb.service.d/override.conf
+    mode: '0644'
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: yes
 
 - name: Start and enable MariaDB
   ansible.builtin.systemd:

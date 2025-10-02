@@ -36,6 +36,9 @@ management-node
 compute-node-1
 compute-node-2
 
+[router]
+management-node
+
 [mongodb_primary]
 nosql-node-1
 
@@ -47,3 +50,7 @@ ansible_user=vagrant
 # Try user's SSH key first, fall back to Vagrant key if needed
 ansible_ssh_private_key_file=~/.ssh/id_ed25519
 ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o IdentitiesOnly=yes -o LogLevel=ERROR'
+
+# Cluster configuration
+cluster_name=burst-a-flat
+slurm_version=25.05.3

@@ -1,0 +1,17 @@
+[Unit]
+Description=SLURM node daemon
+After=network.target munge.service
+Wants=munge.service
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/sysconfig/slurmd
+ExecStart=/usr/local/sbin/slurmd -D $SLURMD_OPTIONS
+ExecReload=/bin/kill -HUP $MAINPID
+PIDFile=/var/run/slurmd.pid
+KillMode=process
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

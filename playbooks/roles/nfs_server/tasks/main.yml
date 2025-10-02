@@ -1,10 +1,13 @@
 ---
 - name: Install NFS server
-  ansible.builtin.package:
+  ansible.builtin.apt:
     name:
       - nfs-kernel-server
       - nfs-common
     state: present
+    lock_timeout: 300
+  retries: 3
+  delay: 90
 
 - name: Create shared directory
   ansible.builtin.file:
@@ -33,5 +36,3 @@
 
 - name: Export NFS shares
   ansible.builtin.shell: exportfs -ra
-  args:
-    creates: /var/lib/nfs/etab

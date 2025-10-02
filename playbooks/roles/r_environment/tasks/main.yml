@@ -1,6 +1,6 @@
 ---
 - name: Install R and dependencies
-  ansible.builtin.package:
+  ansible.builtin.apt:
     name:
       - r-base
       - r-base-dev
@@ -11,6 +11,9 @@
       - r-cran-jsonlite
       - r-cran-httr
     state: present
+    lock_timeout: 300
+  retries: 3
+  delay: 90
 
 - name: Install R packages via R
   ansible.builtin.shell: |

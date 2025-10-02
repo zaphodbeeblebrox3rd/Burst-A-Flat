@@ -6,13 +6,16 @@
     update_cache: yes
 
 - name: Install MongoDB packages
-  ansible.builtin.package:
+  ansible.builtin.apt:
     name:
       - mongodb-org
       - mongodb-org-server
       - mongodb-org-mongos
       - mongodb-org-tools
     state: present
+    lock_timeout: 300
+  retries: 3
+  delay: 90
 
 - name: Create MongoDB configuration
   ansible.builtin.template:

@@ -2,6 +2,7 @@
 - name: Set hostname
   ansible.builtin.hostname:
     name: "{{ inventory_hostname }}"
+  when: ansible_hostname != inventory_hostname
 
 - name: Configure /etc/hosts
   ansible.builtin.lineinfile:
@@ -10,9 +11,18 @@
     state: present
   loop: "{{ groups['all'] }}"
 
-- name: Install required packages
-  ansible.builtin.package:
+- name: Install all required packages
+  ansible.builtin.apt:
     name:
+      # Basic system packages
+      - curl
+      - wget
+      - vim
+      - htop
+      - tree
+      - git
+      - build-essential
+      # Python and development packages
       - python3
       - python3-pip
       - python3-dev
@@ -32,7 +42,40 @@
       - libxmlsec1-dev
       - libffi-dev
       - liblzma-dev
+      # Network and diagnostic utilities
+      - net-tools
+      - dstat
+      - sysstat
+      - lsof
+      - netcat-openbsd
+      - tcpdump
+      - wireshark-common
+      - nmap
+      - traceroute
+      - mtr-tiny
+      - iotop
+      - nethogs
+      - iftop
+      - nload
+      - vnstat
+      - ethtool
+      - iputils-ping
+      - iputils-tracepath
+      - telnet
+      - rsync
+      - openssh-client
+      - openssh-server
+      - screen
+      - tmux
+      - nano
+      - less
+      - jq
+      - atop
+      - glances
     state: present
+    lock_timeout: 600
+  retries: 3
+  delay: 90
 
 - name: Create slurm user
   ansible.builtin.user:
@@ -54,3 +97,12 @@
     - /var/log/slurm
     - /etc/slurm
     - /var/spool/slurm
+
+- name: Create Slurm configuration
+  ansible.builtin.template:
+    src: slurm.conf.j2
+    dest: /etc/slurm/slurm.conf
+    owner: slurm
+    group: slurm
+    mode: '0644'
+  when: inventory_hostname in groups['slurm_controllers'] or inventory_hostname in groups['slurm_computes']
