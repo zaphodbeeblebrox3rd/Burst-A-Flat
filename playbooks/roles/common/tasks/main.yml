@@ -105,4 +105,4 @@
     owner: slurm
     group: slurm
     mode: '0644'
-  when: inventory_hostname in groups['slurm_controllers'] or inventory_hostname in groups['slurm_computes']
+  when: inventory_hostname in groups['slurm_computes']

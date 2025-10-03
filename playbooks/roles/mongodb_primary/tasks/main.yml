@@ -1,4 +1,9 @@
 ---
+- name: Add MongoDB GPG key
+  ansible.builtin.apt_key:
+    url: https://www.mongodb.org/static/pgp/server-6.0.asc
+    state: present
+
 - name: Install MongoDB
   ansible.builtin.apt_repository:
     repo: "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse"
@@ -24,12 +29,37 @@
     owner: mongodb
     group: mongodb
     mode: '0644'
+  notify: restart mongod
+
+- name: Ensure MongoDB data directory exists
+  ansible.builtin.file:
+    path: /var/lib/mongodb
+    state: directory
+    owner: mongodb
+    group: mongodb
+    mode: '0755'
+
+- name: Ensure MongoDB log directory exists
+  ansible.builtin.file:
+    path: /var/log/mongodb
+    state: directory
+    owner: mongodb
+    group: mongodb
+    mode: '0755'
 
 - name: Start and enable MongoDB
   ansible.builtin.systemd:
     name: mongod
     state: started
     enabled: yes
+    daemon_reload: yes
+
+- name: Ensure MongoDB is running
+  ansible.builtin.systemd:
+    name: mongod
+    state: started
+  retries: 3
+  delay: 10
 
 - name: Wait for MongoDB to start
   ansible.builtin.wait_for:
@@ -43,6 +73,12 @@
     creates: /tmp/mongodb_initialized
   register: mongodb_init
   failed_when: mongodb_init.rc != 0 and "already initialized" not in mongodb_init.stderr
+
+- name: Wait for replica set to be ready
+  ansible.builtin.wait_for:
+    port: 27017
+    delay: 5
+    timeout: 30
 
 - name: Mark MongoDB as initialized
   ansible.builtin.file:

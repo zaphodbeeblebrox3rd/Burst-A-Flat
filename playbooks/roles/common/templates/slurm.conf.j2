@@ -1,7 +1,7 @@
 # Slurm configuration file
 ClusterName={{ cluster_name }}
 ControlMachine={{ inventory_hostname }}
-ControlAddr={{ ansible_default_ipv4.address }}
+ControlAddr={{ ansible_host }}
 
 # SlurmDB configuration
 SlurmUser=slurm
@@ -23,6 +23,10 @@ Waittime=0
 SchedulerType=sched/builtin
 SchedulerParameters=bf_continue
 SelectType=select/linear
+
+# Task and process tracking with cgroup v2
+ProctrackType=proctrack/cgroup
+TaskPlugin=task/cgroup
 
 # Node definitions
 {% for host in groups['slurm_computes'] %}

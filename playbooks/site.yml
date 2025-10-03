@@ -59,6 +59,7 @@
   become: yes
   roles:
     - role: mariadb_server
+    - role: slurmdb
 
 - name: Configure MongoDB Primary
   hosts: mongodb_primary

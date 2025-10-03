@@ -1,4 +1,9 @@
 ---
+- name: Add MongoDB GPG key
+  ansible.builtin.apt_key:
+    url: https://www.mongodb.org/static/pgp/server-6.0.asc
+    state: present
+
 - name: Install MongoDB
   ansible.builtin.apt_repository:
     repo: "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse"
@@ -25,20 +30,51 @@
     group: mongodb
     mode: '0644'
 
+- name: Ensure MongoDB data directory exists
+  ansible.builtin.file:
+    path: /var/lib/mongodb
+    state: directory
+    owner: mongodb
+    group: mongodb
+    mode: '0755'
+
+- name: Ensure MongoDB log directory exists
+  ansible.builtin.file:
+    path: /var/log/mongodb
+    state: directory
+    owner: mongodb
+    group: mongodb
+    mode: '0755'
+
 - name: Start and enable MongoDB
   ansible.builtin.systemd:
     name: mongod
     state: started
     enabled: yes
+    daemon_reload: yes
+
+- name: Ensure MongoDB is running
+  ansible.builtin.systemd:
+    name: mongod
+    state: started
+  retries: 3
+  delay: 10
 
 - name: Wait for MongoDB to start
   ansible.builtin.wait_for:
     port: 27017
     delay: 10
 
+- name: Wait for MongoDB primary to be ready
+  ansible.builtin.wait_for:
+    host: "{{ hostvars[groups['mongodb_primary'][0]]['ansible_host'] }}"
+    port: 27017
+    delay: 10
+    timeout: 60
+
 - name: Add replica to MongoDB replica set
   ansible.builtin.shell: |
-    mongosh --eval "rs.add('{{ inventory_hostname }}:27017')"
+    mongosh --host {{ hostvars[groups['mongodb_primary'][0]]['ansible_host'] }}:27017 --eval "rs.add('{{ ansible_host }}:27017')"
   args:
     creates: /tmp/mongodb_replica_added
   register: mongodb_add

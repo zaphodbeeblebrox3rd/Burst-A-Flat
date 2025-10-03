@@ -33,20 +33,18 @@
     enabled: yes
 
 - name: Create Slurm database
-  ansible.builtin.mysql_db:
-    name: slurm_acct_db
-    state: present
-    login_user: root
-    login_password: ""
+  ansible.builtin.shell: |
+    mysql -u root -e "CREATE DATABASE IF NOT EXISTS slurm_acct_db;"
+  args:
+    creates: /var/lib/mysql/slurm_acct_db
 
 - name: Create Slurm user
-  ansible.builtin.mysql_user:
-    name: slurm
-    password: slurm
-    priv: "slurm_acct_db.*:ALL"
-    state: present
-    login_user: root
-    login_password: ""
+  ansible.builtin.shell: |
+    mysql -u root -e "CREATE USER IF NOT EXISTS 'slurm'@'localhost' IDENTIFIED BY 'slurm';"
+    mysql -u root -e "GRANT ALL PRIVILEGES ON slurm_acct_db.* TO 'slurm'@'localhost';"
+    mysql -u root -e "FLUSH PRIVILEGES;"
+  args:
+    creates: /var/lib/mysql/mysql/user.MYD
 
 - name: Configure MariaDB for Slurm
   ansible.builtin.template:

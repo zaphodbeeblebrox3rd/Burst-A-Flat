@@ -1,41 +1,9 @@
 [Service]
-# Prevent systemd from interfering with MariaDB's database operations
+# Relax security restrictions for MariaDB
 PrivateDevices=false
 ProtectSystem=false
-ProtectHome=false
 NoNewPrivileges=false
-PrivateTmp=false
-ProtectKernelTunables=false
-ProtectKernelModules=false
-ProtectControlGroups=false
-RestrictRealtime=false
-RestrictSUIDSGID=false
-RestrictNamespaces=false
-LockPersonality=false
-MemoryDenyWriteExecute=false
-RestrictAddressFamilies=
-SystemCallFilter=
-SystemCallErrorNumber=
-SystemCallArchitectures=
-RestrictNamespaces=
-PrivateUsers=false
-ProtectKernelLogs=false
-ProtectHostname=false
-ProtectClock=false
-
-# Allow MariaDB to manage its own resources and database files
 Delegate=yes
-KillMode=mixed
 LimitNOFILE=65536
 LimitNPROC=65536
 LimitMEMLOCK=infinity
-LimitAS=infinity
-LimitDATA=infinity
-LimitFSIZE=infinity
-LimitLOCKS=infinity
-LimitMSGQUEUE=infinity
-LimitNICE=infinity
-LimitRTPRIO=infinity
-LimitRTTIME=infinity
-LimitSIGPENDING=infinity
-LimitSTACK=infinity

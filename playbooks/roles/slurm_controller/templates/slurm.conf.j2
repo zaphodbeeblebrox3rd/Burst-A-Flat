@@ -1,0 +1,37 @@
+# Slurm configuration for controller
+ClusterName={{ cluster_name }}
+ControlMachine={{ inventory_hostname }}
+ControlAddr={{ ansible_host }}
+SlurmUser=slurm
+SlurmctldPort=6817
+SlurmdPort=6818
+StateSaveLocation=/var/spool/slurm/ctld
+SlurmdSpoolDir=/var/spool/slurm/d
+SwitchType=switch/none
+MpiDefault=none
+SlurmctldPidFile=/var/run/slurmctld.pid
+SlurmdPidFile=/var/run/slurmd.pid
+ProctrackType=proctrack/cgroup
+TaskPlugin=task/cgroup
+SchedulerType=sched/backfill
+SelectType=select/linear
+SlurmctldLogFile=/var/log/slurm/slurmctld.log
+SlurmdLogFile=/var/log/slurm/slurmd.log
+SlurmctldDebug=info
+SlurmdDebug=info
+SlurmctldParameters=enable_configless
+SlurmdParameters=enable_configless
+# SlurmDB configuration - controller connects to slurmdb-node
+AccountingStorageType=accounting_storage/slurmdbd
+AccountingStorageHost={{ groups['slurmdb'][0] }}
+AccountingStoragePort=6819
+AccountingStorageUser=slurm
+AccountingStoragePass=slurm
+
+# Partition definitions
+PartitionName=compute Nodes={{ groups['slurm_computes'] | join(',') }} Default=YES MaxTime=INFINITE State=UP
+
+# Node definitions
+{% for host in groups['slurm_computes'] %}
+NodeName={{ host }} CPUs=4 Sockets=1 CoresPerSocket=2 ThreadsPerCore=2 State=UNKNOWN
+{% endfor %}

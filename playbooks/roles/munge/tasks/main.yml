@@ -43,9 +43,8 @@
     group: munge
     mode: '0400'
     remote_src: yes
-  when: inventory_hostname == groups['slurm_controllers'][0]
-  delegate_to: "{{ item }}"
-  loop: "{{ groups['all'] }}"
+  when: inventory_hostname != groups['slurm_controllers'][0]
+  delegate_to: "{{ groups['slurm_controllers'][0] }}"
 
 - name: Start and enable munge service
   ansible.builtin.systemd:

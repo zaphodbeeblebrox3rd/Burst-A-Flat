@@ -1,4 +1,12 @@
 ---
+- name: Create Slurm controller configuration
+  ansible.builtin.template:
+    src: slurm.conf.j2
+    dest: /etc/slurm/slurm.conf
+    owner: slurm
+    group: slurm
+    mode: '0644'
+
 - name: Create SlurmDB configuration
   ansible.builtin.template:
     src: slurmdbd.conf.j2
@@ -17,6 +25,12 @@
   ansible.builtin.template:
     src: slurmd.service.j2
     dest: /etc/systemd/system/slurmd.service
+    mode: '0644'
+
+- name: Create systemd service for slurmdbd
+  ansible.builtin.template:
+    src: slurmdbd.service.j2
+    dest: /etc/systemd/system/slurmdbd.service
     mode: '0644'
 
 - name: Create systemd override directory for slurmctld
@@ -55,3 +69,11 @@
   loop:
     - slurmctld
     - slurmd
+  when: inventory_hostname in groups['slurm_controllers']
+
+- name: Start SlurmDB service
+  ansible.builtin.systemd:
+    name: slurmdbd
+    state: started
+    enabled: yes
+  when: inventory_hostname in groups['slurmdb']

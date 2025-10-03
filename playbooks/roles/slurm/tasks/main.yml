@@ -14,20 +14,31 @@
       - libcurl4-openssl-dev
       - libjwt-dev
       - libmysqlclient-dev
+      - libdbus-1-dev
     state: present
     lock_timeout: 300
   retries: 3
   delay: 90
 
+- name: Clean up any existing Slurm source
+  ansible.builtin.file:
+    path: /tmp/slurm-{{ slurm_version }}
+    state: absent
+  become: yes
+
 - name: Download and compile Slurm
   ansible.builtin.shell: |
     cd /tmp
+    rm -f slurm-{{ slurm_version }}.tar.bz2
     wget https://download.schedmd.com/slurm/slurm-{{ slurm_version }}.tar.bz2
     tar -xjf slurm-{{ slurm_version }}.tar.bz2
     cd slurm-{{ slurm_version }}
-    ./configure --prefix=/usr/local --sysconfdir=/etc/slurm --enable-pam --with-mysql
+    ./configure --prefix=/usr/local --sysconfdir=/etc/slurm --enable-pam --with-mysql --enable-cgroupv2
     make -j$(nproc)
     make install
+    cd /tmp
+    rm -rf slurm-{{ slurm_version }}
+    rm -f slurm-{{ slurm_version }}.tar.bz2
   args:
     creates: /usr/local/sbin/slurmctld
   become: yes
