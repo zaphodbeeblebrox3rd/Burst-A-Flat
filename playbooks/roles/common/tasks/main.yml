@@ -11,6 +11,21 @@
     state: present
   loop: "{{ groups['all'] }}"
 
+- name: Add MongoDB virtual hostname for cloud burst
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "{{ mongodb_ip }} mongodb-cluster"
+    state: present
+  vars:
+    mongodb_ip: >-
+      {%- if inventory_hostname in groups['network1'] -%}
+        {{ hostvars[groups['mongodb_primary'][0]]['ansible_host'] }}
+      {%- elif inventory_hostname in groups['network2'] -%}
+        {{ hostvars[groups['mongodb_replica'][0]]['ansible_host'] }}
+      {%- else -%}
+        {{ hostvars[groups['mongodb_primary'][0]]['ansible_host'] }}
+      {%- endif -%}
+
 - name: Install all required packages
   ansible.builtin.apt:
     name:
