@@ -29,6 +29,7 @@
     owner: mongodb
     group: mongodb
     mode: '0644'
+  notify: restart mongod
 
 - name: Ensure MongoDB data directory exists
   ansible.builtin.file:
@@ -45,6 +46,19 @@
     owner: mongodb
     group: mongodb
     mode: '0755'
+
+- name: Create systemd override directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/mongod.service.d
+    state: directory
+    mode: '0755'
+
+- name: Create systemd override configuration
+  ansible.builtin.template:
+    src: mongod-override.conf.j2
+    dest: /etc/systemd/system/mongod.service.d/override.conf
+    mode: '0644'
+  notify: restart mongod
 
 - name: Start and enable MongoDB
   ansible.builtin.systemd:

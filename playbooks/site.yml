@@ -82,11 +82,17 @@
         name: "{{ item }}"
         state: started
         enabled: yes
-      loop:
-        - munge
-        - slurmd
-        - slurmctld
-      when: inventory_hostname in groups['slurm_controllers'] or inventory_hostname in groups['slurm_computes']
+      loop: "{{ slurm_services }}"
+      vars:
+        slurm_services: >-
+          {%- if inventory_hostname in groups['slurm_controllers'] -%}
+            {{ ['munge', 'slurmd', 'slurmctld'] }}
+          {%- elif inventory_hostname in groups['slurm_computes'] -%}
+            {{ ['munge', 'slurmd'] }}
+          {%- else -%}
+            {{ [] }}
+          {%- endif -%}
+      when: slurm_services | length > 0
 
     - name: Create shared home directory structure
       ansible.builtin.file:
@@ -105,9 +111,18 @@
     - name: Set up SSH keys for passwordless access
       ansible.builtin.authorized_key:
         user: vagrant
-        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+        key: "{{ ssh_public_key }}"
         state: present
-      when: lookup('file', '~/.ssh/id_rsa.pub', errors='ignore') != ''
+      vars:
+        ssh_public_key: >-
+          {%- if lookup('file', '~/.ssh/id_ed25519.pub', errors='ignore') != '' -%}
+            {{ lookup('file', '~/.ssh/id_ed25519.pub') }}
+          {%- elif lookup('file', '~/.ssh/id_rsa.pub', errors='ignore') != '' -%}
+            {{ lookup('file', '~/.ssh/id_rsa.pub') }}
+          {%- else -%}
+            ''
+          {%- endif -%}
+      when: ssh_public_key != ''
 
     - name: Display cluster information
       ansible.builtin.debug:
