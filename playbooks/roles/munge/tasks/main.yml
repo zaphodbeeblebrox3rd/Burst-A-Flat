@@ -40,6 +40,17 @@
     - inventory_hostname == groups['slurm_controllers'][0]
     - munge_key_status.stdout != "encrypted"
 
+- name: Create vault password file if missing
+  ansible.builtin.shell: |
+    if [ ! -f "{{ playbook_dir }}/../.vault_pass" ]; then
+      head /dev/urandom | tr -dc A-Za-z0-9_ | head -c 45 > "{{ playbook_dir }}/../.vault_pass"
+      chmod 600 "{{ playbook_dir }}/../.vault_pass"
+      echo "Created vault password file: {{ playbook_dir }}/../.vault_pass"
+    fi
+  delegate_to: localhost
+  become: no
+  when: inventory_hostname == groups['slurm_controllers'][0]
+
 - name: Generate new munge key (controller only)
   ansible.builtin.shell: /usr/sbin/mungekey -c
   args:
