@@ -7,20 +7,20 @@ You can't burst a flat tire so why this name for a project?
 
 Let's start with the term "Flat".  By flat, I am referring to a flat data file.  This is a single file or a set of files that contain a significant amount of data for computation.
 
-Now, "Burst".  Bursting is mostly a reference to a cloud bursting scenario where computational jobs need to be agnostic about where they obtain their data.  The availability of the data as well as the transparency of how to access it are so challenging that I have not seen this done successfully.  I hear complaints about how difficult it is, but no real solutions.
+Now, "Burst".  Bursting is mostly a reference to a cloud bursting scenario where computational jobs need to be agnostic about where they obtain their data.  In other words, all the 
 
 The heart of the issue is that ultimately we all have some paradoxical wishes:
 1. A single source of truth on our storage
 2. Location-agnostic high-performance storage to be available at a single endpoint.
 3. Continue to support the smorgasboard of statistical applications and computational strategies in our industry.
-4. Petabyte (or even exabyte) storage for limitlessly reckless duplication of data files.
-5. Utilize a solution that just works magically and not have to work so hard.
+4. Petabyte (or even exabyte) storage for limitlessly reckless duplication and deduplication of data.
+5. A zero-effort solution
 
-Let me break you the bad news now: this is not happening.  There is no magical jellybean field available for purchase that is going to make this all happen.  There needs to be some collaboration and effort between the System Engineers behind the computational systems and the data scientists.  Difficult work too.  But where to start?
+Every existing worlkload is different and might need an investment of time to make this transition.  There needs to be some collaboration and effort between the System Engineers behind the computational systems and the data scientists.  It is difficult work.  Perhaps an example workload architecture can demonstrate how to best prepare us for new, globally scalable workloads may help to guide our computational work going forward.
 
-This is where Burst-A-Flat comes in.  To be clear, this is not a complete solution for the woes experienced by HPC Engineers in a hybrid cloud computing scenario.  At this time, I can only provide this one approach for one specific type of workload.  You will also likely require a giant water cooler that IT and the researchers can all stand around and make the best of friends.
+Burst-A-Flat aspires to be just such an example.  To be clear, this is not a complete solution for the woes experienced by HPC Engineers in a hybrid cloud computing scenario.  This project is intended to inspire others; not merely a demonstration of a problem solved but as a mindset of adjusting our work on-premise, in the cloud, and hybrid computing environments so that our work is prepared to move to the next level.
 
-It is because of, not in spite of, the challenges we face by the spectrum of different computational workload types that I would like to continue this train of thought. Eventually we should accomplish multiple types of computational workloads in a cloud bursting / hybrid cloud / multiple datacenter scenario!
+In summary, this project provides a simulation of a workload built to scale from a few CPUs to gigantic proportions..  This is one of, I hope, an array of examples in which different types of computational workloads can be architected ready for true cloud bursting.
 
 
 ## Architecture

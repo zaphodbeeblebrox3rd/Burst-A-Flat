@@ -15,6 +15,14 @@
     group: slurm
     mode: '0600'
 
+- name: Create cgroup configuration
+  ansible.builtin.template:
+    src: cgroup.conf.j2
+    dest: /etc/slurm/cgroup.conf
+    owner: slurm
+    group: slurm
+    mode: '0644'
+
 - name: Create systemd service for slurmctld
   ansible.builtin.template:
     src: slurmctld.service.j2
@@ -63,12 +71,9 @@
 
 - name: Start Slurm controller services
   ansible.builtin.systemd:
-    name: "{{ item }}"
+    name: slurmctld
     state: started
     enabled: yes
-  loop:
-    - slurmctld
-    - slurmd
   when: inventory_hostname in groups['slurm_controllers']
 
 - name: Start SlurmDB service

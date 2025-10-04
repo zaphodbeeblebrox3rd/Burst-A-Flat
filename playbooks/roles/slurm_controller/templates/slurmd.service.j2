@@ -5,10 +5,11 @@ Wants=munge.service
 
 [Service]
 Type=forking
+User=slurm
 EnvironmentFile=-/etc/sysconfig/slurmd
 ExecStart=/usr/local/sbin/slurmd -D $SLURMD_OPTIONS
 ExecReload=/bin/kill -HUP $MAINPID
-PIDFile=/var/run/slurmd.pid
+PIDFile=/run/slurmd.pid
 KillMode=process
 Restart=on-failure
 RestartSec=5s

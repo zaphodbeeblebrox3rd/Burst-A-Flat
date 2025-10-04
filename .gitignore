@@ -5,6 +5,8 @@
 # Ansible
 *.retry
 .ansible/
+passwords/
+.vault_pass
 
 # VirtualBox
 *.vbox
