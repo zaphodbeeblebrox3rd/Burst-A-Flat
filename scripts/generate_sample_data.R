@@ -1,20 +1,13 @@
 #!/usr/bin/env Rscript
 
 # Generate sample RData file for Burst-A-Flat project
-# Uses built-in R datasets package - completely public and open data
+# Uses built-in R datasets - completely public and open data
 
-# Load required libraries
-library(datasets)
+# Generate sample data using built-in datasets
+# Change to data directory
+setwd("../data")
 
-# Create a comprehensive dataset combining multiple built-in datasets
-# This simulates a typical research scenario with multiple data sources
-
-# 1. US Economic data (economics dataset)
-us_economics <- economics
-us_economics$data_source <- "US Economic Indicators"
-us_economics$country <- "United States"
-
-# 2. US State data (state.x77 dataset)
+# 1. US State data (state.x77 dataset)
 us_states <- data.frame(
   state = rownames(state.x77),
   state.x77,
@@ -23,7 +16,7 @@ us_states <- data.frame(
 us_states$data_source <- "US State Statistics"
 us_states$country <- "United States"
 
-# 3. US Arrests data (USArrests dataset)
+# 2. US Arrests data (USArrests dataset)
 us_arrests <- data.frame(
   state = rownames(USArrests),
   USArrests,
@@ -32,7 +25,7 @@ us_arrests <- data.frame(
 us_arrests$data_source <- "US Crime Statistics"
 us_arrests$country <- "United States"
 
-# 4. Motor Trend data (mtcars dataset) - for economic analysis
+# 3. Motor Trend data (mtcars dataset) - for economic analysis
 mtcars_data <- data.frame(
   car_model = rownames(mtcars),
   mtcars,
@@ -41,10 +34,9 @@ mtcars_data <- data.frame(
 mtcars_data$data_source <- "Motor Trend Car Tests"
 mtcars_data$country <- "United States"
 
-# 5. Create a combined research dataset
+# 4. Create a combined research dataset
 # This simulates a typical research scenario where you combine multiple datasets
 research_data <- list(
-  economics = us_economics,
   states = us_states,
   arrests = us_arrests,
   cars = mtcars_data,
@@ -54,7 +46,6 @@ research_data <- list(
     source = "R built-in datasets package",
     license = "Public domain",
     variables = list(
-      economics = c("date", "pce", "pop", "psavert", "uempmed", "unemploy"),
       states = c("state", "Population", "Income", "Illiteracy", "Life.Exp", "Murder", "HS.Grad", "Frost", "Area"),
       arrests = c("state", "Murder", "Assault", "UrbanPop", "Rape"),
       cars = c("car_model", "mpg", "cyl", "disp", "hp", "drat", "wt", "qsec", "vs", "am", "gear", "carb")
@@ -66,7 +57,6 @@ research_data <- list(
 save(research_data, file = "sample_research_data.RData")
 
 # Also create a CSV version for comparison
-write.csv(us_economics, "sample_economics.csv", row.names = FALSE)
 write.csv(us_states, "sample_states.csv", row.names = FALSE)
 write.csv(us_arrests, "sample_arrests.csv", row.names = FALSE)
 write.csv(mtcars_data, "sample_cars.csv", row.names = FALSE)
@@ -74,10 +64,9 @@ write.csv(mtcars_data, "sample_cars.csv", row.names = FALSE)
 # Print summary
 cat("Sample data files created:\n")
 cat("- sample_research_data.RData (combined dataset)\n")
-cat("- sample_economics.csv (US economic indicators)\n")
 cat("- sample_states.csv (US state statistics)\n")
 cat("- sample_arrests.csv (US crime statistics)\n")
 cat("- sample_cars.csv (Motor Trend car data)\n")
 cat("\nData sources: R built-in datasets package (public domain)\n")
-cat("Total records: ", nrow(us_economics) + nrow(us_states) + nrow(us_arrests) + nrow(mtcars_data), "\n")
+cat("Total records: ", nrow(us_states) + nrow(us_arrests) + nrow(mtcars_data), "\n")
 cat("Date created: ", Sys.Date(), "\n")

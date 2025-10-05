@@ -7,7 +7,7 @@
     fi
   register: route_result
   changed_when: route_result.rc == 0
-  when: ansible_default_ipv4.address is match("192.168.60.*")
+  when: inventory_hostname in groups['network2']
 
 - name: Configure route to network1 via management-node
   ansible.builtin.shell: |
@@ -17,7 +17,7 @@
     fi
   register: route_result
   changed_when: route_result.rc == 0
-  when: ansible_default_ipv4.address is match("192.168.60.*")
+  when: inventory_hostname in groups['network2']
 
 - name: Configure route to network2 via management-node for network1 hosts
   ansible.builtin.shell: |
@@ -27,4 +27,4 @@
     fi
   register: route_result
   changed_when: route_result.rc == 0
-  when: ansible_default_ipv4.address is match("192.168.50.*")
+  when: inventory_hostname in groups['network1']

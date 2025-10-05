@@ -1,0 +1,10 @@
+[Service]
+# Allow slurmd to manage cgroups (runs as root)
+Delegate=yes
+ProtectSystem=false
+ProtectHome=false
+NoNewPrivileges=false
+PrivateDevices=false
+ProtectKernelTunables=false
+ProtectKernelModules=false
+ProtectControlGroups=false

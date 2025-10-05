@@ -1,4 +1,13 @@
 ---
+- name: Set cgroup permissions for slurm user
+  ansible.builtin.shell: |
+    # Allow slurm user to write to cgroup subtree_control files
+    chown -R slurm:slurm /sys/fs/cgroup/system.slice/slurmstepd.scope 2>/dev/null || true
+    # Set up udev rule for persistent cgroup permissions
+    echo 'SUBSYSTEM=="cgroup", ACTION=="add", RUN+="/bin/chown -R slurm:slurm /sys/fs/cgroup/system.slice/slurmstepd.scope"' > /etc/udev/rules.d/99-slurm-cgroup.rules
+  args:
+    creates: /etc/udev/rules.d/99-slurm-cgroup.rules
+
 - name: Create cgroup configuration
   ansible.builtin.template:
     src: cgroup.conf.j2
@@ -7,10 +16,22 @@
     group: slurm
     mode: '0644'
 
-- name: Create systemd service for slurmd
+- name: Create base systemd service for slurmd
   ansible.builtin.template:
     src: slurmd.service.j2
     dest: /etc/systemd/system/slurmd.service
+    mode: '0644'
+
+- name: Create systemd override directory for slurmd
+  ansible.builtin.file:
+    path: /etc/systemd/system/slurmd.service.d
+    state: directory
+    mode: '0755'
+
+- name: Create systemd override for slurmd
+  ansible.builtin.template:
+    src: slurmd-override.conf.j2
+    dest: /etc/systemd/system/slurmd.service.d/override.conf
     mode: '0644'
 
 - name: Reload systemd daemon
