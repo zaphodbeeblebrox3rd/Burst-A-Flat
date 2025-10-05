@@ -84,6 +84,63 @@
   hosts: all
   become: yes
   tasks:
+    - name: Generate shared SSH key pair for internal node communication
+      ansible.builtin.shell: |
+        ssh-keygen -t ed25519 -f /home/vagrant/.ssh/id_ed25519_internal -N "" -C "internal-cluster-key"
+      args:
+        creates: /home/vagrant/.ssh/id_ed25519_internal
+      when: inventory_hostname == groups['slurm_controllers'][0]
+
+    - name: Set proper permissions on shared SSH key files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        owner: vagrant
+        group: vagrant
+        mode: "{{ '0600' if item.endswith('id_ed25519_internal') else '0644' }}"
+      loop:
+        - /home/vagrant/.ssh/id_ed25519_internal
+        - /home/vagrant/.ssh/id_ed25519_internal.pub
+      when: inventory_hostname == groups['slurm_controllers'][0]
+
+    - name: Copy shared SSH keys to all nodes
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: vagrant
+        group: vagrant
+        mode: "{{ item.mode }}"
+        remote_src: yes
+      loop:
+        - { src: "/home/vagrant/.ssh/id_ed25519_internal", dest: "/home/vagrant/.ssh/id_ed25519_internal", mode: "0600" }
+        - { src: "/home/vagrant/.ssh/id_ed25519_internal.pub", dest: "/home/vagrant/.ssh/id_ed25519_internal.pub", mode: "0644" }
+      when: inventory_hostname != groups['slurm_controllers'][0]
+      delegate_to: "{{ groups['slurm_controllers'][0] }}"
+
+    - name: Read shared public key content for authorized_keys
+      ansible.builtin.shell: |
+        cat /home/vagrant/.ssh/id_ed25519_internal.pub
+      when: inventory_hostname == groups['slurm_controllers'][0]
+      register: shared_public_key
+
+    - name: Add shared public key to authorized_keys on all nodes
+      ansible.builtin.authorized_key:
+        user: vagrant
+        key: "{{ shared_public_key.stdout }}"
+        state: present
+
+    - name: Configure SSH to use internal key by default
+      ansible.builtin.blockinfile:
+        path: /home/vagrant/.ssh/config
+        create: yes
+        owner: vagrant
+        group: vagrant
+        mode: '0600'
+        block: |
+          Host *
+            IdentityFile ~/.ssh/id_ed25519_internal
+            StrictHostKeyChecking no
+            UserKnownHostsFile /dev/null
+
     - name: Start and enable Slurm services
       ansible.builtin.systemd:
         name: "{{ item }}"
@@ -113,23 +170,48 @@
         - /home/vagrant/shared/data
         - /home/vagrant/shared/scripts
         - /home/vagrant/shared/results
-      when: inventory_hostname in groups['nfs_servers']
+      when: inventory_hostname in groups['slurm_login']
 
     - name: Set up SSH keys for passwordless access
       ansible.builtin.authorized_key:
         user: vagrant
         key: "{{ ssh_public_key }}"
         state: present
-      vars:
-        ssh_public_key: >-
-          {%- if lookup('file', '~/.ssh/id_ed25519.pub', errors='ignore') != '' -%}
-            {{ lookup('file', '~/.ssh/id_ed25519.pub') }}
-          {%- elif lookup('file', '~/.ssh/id_rsa.pub', errors='ignore') != '' -%}
-            {{ lookup('file', '~/.ssh/id_rsa.pub') }}
-          {%- else -%}
-            ''
-          {%- endif -%}
       when: ssh_public_key != ''
+
+    - name: Copy sample data generation script
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../scripts/generate_sample_data.R"
+        dest: /home/vagrant/shared/scripts/generate_sample_data.R
+        owner: vagrant
+        group: vagrant
+        mode: '0755'
+      when: inventory_hostname in groups['slurm_login']
+
+    - name: Copy R workload demo script
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../scripts/r_workload_demo.sh"
+        dest: /home/vagrant/shared/scripts/r_workload_demo.sh
+        owner: vagrant
+        group: vagrant
+        mode: '0755'
+      when: inventory_hostname in groups['slurm_login']
+
+    - name: Generate sample data
+      ansible.builtin.shell: |
+        cd /home/vagrant/shared/scripts
+        Rscript generate_sample_data.R
+      become_user: vagrant
+      when: inventory_hostname in groups['slurm_login']
+      register: sample_data_result
+      changed_when: sample_data_result.rc == 0
+
+    - name: Display sample data generation results
+      ansible.builtin.debug:
+        msg: "Sample data generated successfully in /home/vagrant/shared/data/"
+      when:
+        - inventory_hostname in groups['slurm_login']
+        - sample_data_result.rc == 0
 
     - name: Validate Slurm cluster is operational
       ansible.builtin.shell: |

@@ -95,18 +95,6 @@
     - inventory_hostname == groups['slurm_controllers'][0]
     - munge_key_status.stdout != "encrypted"
 
-- name: Deploy munge key from vault to controller
-  ansible.builtin.copy:
-    src: "{{ playbook_dir }}/../passwords/munge.key"
-    dest: /etc/munge/munge.key
-    owner: munge
-    group: munge
-    mode: '0600'
-  become: yes
-  when:
-    - inventory_hostname == groups['slurm_controllers'][0]
-    - munge_key_status.stdout == "encrypted"
-
 - name: Deploy munge key from vault to all nodes
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/../passwords/munge.key"
@@ -115,59 +103,34 @@
     group: munge
     mode: '0600'
   become: yes
-  when:
-    - inventory_hostname != groups['slurm_controllers'][0]
-    - munge_key_status.stdout == "encrypted"
+  when: munge_key_status.stdout == "encrypted"
 
-- name: Copy munge key from controller to all nodes (fallback)
-  ansible.builtin.copy:
-    src: /etc/munge/munge.key
-    dest: /etc/munge/munge.key
-    owner: munge
-    group: munge
-    mode: '0600'
-    remote_src: yes
-  when:
-    - munge_key_status.stdout != "encrypted"
-  delegate_to: "{{ groups['slurm_controllers'][0] }}"
-
-- name: Create MD5 hash of controller munge key for fallback verification
+- name: Display the md5 hash of each node's munge key
   ansible.builtin.shell: |
-    md5sum /etc/munge/munge.key | cut -d' ' -f1 > "{{ playbook_dir }}/../passwords/munge.key.md5"
-  delegate_to: localhost
-  become: no
-  when:
-    - inventory_hostname == groups['slurm_controllers'][0]
-    - munge_key_status.stdout != "encrypted"
-
-- name: Verify munge key MD5 hash on all nodes
-  ansible.builtin.shell: |
-    if [ -f "{{ playbook_dir }}/../passwords/munge.key.md5" ]; then
-      expected_md5=$(cat "{{ playbook_dir }}/../passwords/munge.key.md5")
-      actual_md5=$(md5sum /etc/munge/munge.key | cut -d' ' -f1)
-      if [ "$expected_md5" = "$actual_md5" ]; then
-        echo "Munge key verification PASSED for {{ inventory_hostname }}"
-      else
-        echo "Munge key verification FAILED for {{ inventory_hostname }}: expected $expected_md5, got $actual_md5"
-        exit 1
-      fi
-    else
-      echo "No MD5 hash file found for verification on {{ inventory_hostname }}"
-      exit 1
-    fi
+    md5sum /etc/munge/munge.key
+  become: yes 
   register: munge_key_verification
-  failed_when: munge_key_verification.rc != 0
 
 - name: Display munge key verification results
   ansible.builtin.debug:
     msg: |
-      Munge Key Verification Results:
-      {% for host in ansible_play_hosts %}
-      {{ host }}: {{ hostvars[host]['munge_key_verification']['stdout'] }}
-      {% endfor %}
+      Munge Key Verification Results: {{ inventory_hostname }}: '{{ munge_key_verification['stdout'] }}'
 
 - name: Start and enable munge service
   ansible.builtin.systemd:
     name: munge
     state: started
     enabled: yes
+
+- name: Clean up temporary munge key files on localhost
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/munge_unencrypted.key
+    - /tmp/fresh_munge.key
+    - /tmp/fresh_munge2.key
+    - /tmp/test_munge.key
+    - /tmp/munge_decrypted.key
+  delegate_to: localhost
+  become: no

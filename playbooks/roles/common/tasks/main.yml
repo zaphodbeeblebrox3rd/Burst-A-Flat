@@ -99,6 +99,8 @@
     shell: /bin/bash
     home: /var/lib/slurm
     create_home: yes
+    groups: munge
+    append: yes
 
 - name: Create slurm directories
   ansible.builtin.file:
