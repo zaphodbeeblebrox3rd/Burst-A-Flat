@@ -54,6 +54,11 @@
   become: yes
   roles:
     - role: nfs_client
+
+- name: Configure R Environment on Login Node
+  hosts: slurm_login
+  become: yes
+  roles:
     - role: r_environment
 
 - name: Configure MariaDB for SlurmDB

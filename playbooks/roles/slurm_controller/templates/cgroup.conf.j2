@@ -1,17 +1,6 @@
 # Slurm cgroup configuration
 CgroupMountpoint=/sys/fs/cgroup
-CgroupAutomount=yes
-CgroupReleaseAgentDir=/etc/slurm/cgroup
 ConstrainCores=yes
 ConstrainRAMSpace=yes
 ConstrainSwapSpace=yes
 ConstrainDevices=no
-AllowedDevicesFile=/etc/slurm/cgroup_allowed_devices_file.conf
-ConstrainKmemSpace=no
-MaxKmemPercent=100
-MinKmemSpace=30
-ConstrainCpuset=yes
-ConstrainCPUShares=no
-ConstrainMemory=yes
-MaxRAMPercent=100
-MinRAMSpace=30

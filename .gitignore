@@ -7,6 +7,7 @@
 .ansible/
 passwords/
 .vault_pass
+**/passwords/*.md5
 
 # VirtualBox
 *.vbox

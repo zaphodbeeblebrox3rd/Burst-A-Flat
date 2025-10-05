@@ -7,13 +7,6 @@
     group: slurm
     mode: '0644'
 
-- name: Create SlurmDB configuration
-  ansible.builtin.template:
-    src: slurmdbd.conf.j2
-    dest: /etc/slurm/slurmdbd.conf
-    owner: slurm
-    group: slurm
-    mode: '0600'
 
 - name: Create cgroup configuration
   ansible.builtin.template:
@@ -70,9 +63,3 @@
     enabled: yes
   when: inventory_hostname in groups['slurm_controllers']
 
-- name: Start SlurmDB service
-  ansible.builtin.systemd:
-    name: slurmdbd
-    state: started
-    enabled: yes
-  when: inventory_hostname in groups['slurmdb']

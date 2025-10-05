@@ -7,21 +7,24 @@
   retries: 3
   delay: 90
 
-- name: Install R packages via R
+- name: Install R packages via CRAN
   ansible.builtin.shell: |
-    R --slave -e "
-    packages <- c({{ r_cran_packages | map('quote') | join(', ') }})
-    install.packages(packages, repos='{{ r_cran_repo }}', dependencies=TRUE, type='source')
-    "
+    R --slave -e '
+    packages <- c({% for pkg in r_cran_packages %}"{{ pkg }}"{% if not loop.last %}, {% endif %}{% endfor %})
+    install.packages(packages, repos="{{ r_cran_repo }}", dependencies=TRUE, type="source")
+    '
   args:
     creates: /tmp/r_packages_installed
   retries: 3
   delay: 30
+  register: r_package_result
+  failed_when: r_package_result.rc != 0 and "already installed" not in r_package_result.stderr
 
 - name: Mark R packages as installed
   ansible.builtin.file:
     path: /tmp/r_packages_installed
     state: touch
+  when: r_package_result.rc == 0
 
 - name: Verify R installation
   ansible.builtin.shell: |

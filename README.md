@@ -129,7 +129,7 @@ vagrant up
 
 ### Step 3: Configure Cluster
 ```bash
-ansible-playbook -i inventory/hosts playbooks/site.yml
+ansible-playbook playbooks/site.yml
 ```
 
 ### Step 4: Test the Cluster

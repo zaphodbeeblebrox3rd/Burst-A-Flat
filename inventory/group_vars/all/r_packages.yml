@@ -25,6 +25,7 @@ r_system_packages:
   - r-cran-viridis
 
 # R packages installed via install.packages() (from CRAN)
+# Note: Built-in R packages (stats, utils, graphics, etc.) are not included
 r_cran_packages:
   - mongolite
   - DBI
@@ -55,50 +56,7 @@ r_cran_packages:
   - spatial
   - rpart
   - class
-  - nnet
   - boot
-  - splines
-  - stats
-  - utils
-  - grDevices
-  - graphics
-  - methods
-  - datasets
-  - tools
-  - parallel
-  - compiler
-  - grid
-  - tcltk
-  - KernSmooth
-  - MASS
-  - class
-  - nnet
-  - spatial
-  - rpart
-  - foreign
-  - cluster
-  - survival
-  - mgcv
-  - nlme
-  - lattice
-  - Matrix
-  - Rcpp
-  - RcppArmadillo
-  - RcppEigen
-  - base64enc
-  - digest
-  - openssl
-  - curl
-  - xml2
-  - yaml
-  - config
-  - pool
-  - odbc
-  - RPostgreSQL
-  - RMySQL
-  - RSQLite
-  - DBI
-  - mongolite
 
 # CRAN repository URL
 r_cran_repo: "https://cran.rstudio.com/"
