@@ -7,20 +7,22 @@ You can't burst a flat tire so why this name for a project?
 
 Let's start with the term "Flat".  By flat, I am referring to a flat data file.  This is a single file or a set of files that contain a significant amount of data for computation.
 
-Now, "Burst".  Bursting is mostly a reference to a cloud bursting scenario where computational jobs need to be agnostic about where they obtain their data.  In other words, all the 
+Now, "Burst".  "Cloud Bursting" is a buzz word that I dislike but I am using it here for a reason.  I think that some workloads might be able to survive and thrive in a hybrid cloud and cloud bursting architecture.  This project is meant to demonstrate examples of how this could be done.
 
-The heart of the issue is that ultimately we all have some paradoxical wishes:
+The name is also meant to be fun! Besides a demo of a concept, this project is a fully functional slurm playground.  Other similar projects use containers to provide greater support for host OS and to run on the typical resources available to most machines.  This project is a bit selfish in that it requires Ubuntu and at least 24 GB of memory.  However I think the benefits are tremendous for anyone who wants to explore and kick the tires a bit.  Maybe install some additional packages if you wish.
+
+Whether we are data scientists or HPC engineers we likely share some paradoxical wishes:
 1. A single source of truth on our storage
 2. Location-agnostic high-performance storage to be available at a single endpoint.
-3. Continue to support the smorgasboard of statistical applications and computational strategies in our industry.
+3. Continue to support the smorgasboard of statistical applications and computational strategies in our industries, regardless of what that industry may be.
 4. Petabyte (or even exabyte) storage for limitlessly reckless duplication and deduplication of data.
 5. A zero-effort solution
 
-Every existing worlkload is different and might need an investment of time to make this transition.  There needs to be some collaboration and effort between the System Engineers behind the computational systems and the data scientists.  It is difficult work.  Perhaps an example workload architecture can demonstrate how to best prepare us for new, globally scalable workloads may help to guide our computational work going forward.
+Every existing worlkload is different and might need an investment of time to make this transition.  There needs to be some collaboration and effort between the System Engineers behind the computational systems and the data scientists.  It is difficult work.
 
-Burst-A-Flat aspires to be just such an example.  To be clear, this is not a complete solution for the woes experienced by HPC Engineers in a hybrid cloud computing scenario.  This project is intended to inspire others; not merely a demonstration of a problem solved but as a mindset of adjusting our work on-premise, in the cloud, and hybrid computing environments so that our work is prepared to move to the next level.
+Burst-A-Flat aspires to provide an instructional example to start this path.  This project is intended to inspire; not just to fix a specific problem. This is a workshop and demonstration of a problem solved, but more importantly this is a mindset of writing new code for new projects on-premise, in the cloud, and hybrid computing environments so that our work is prepared to move to the next level.
 
-In summary, this project provides a simulation of a workload built to scale from a few CPUs to gigantic proportions..  This is one of, I hope, an array of examples in which different types of computational workloads can be architected ready for true cloud bursting.
+In summary, this project provides a simulation of a workload built to scale from a few CPUs to gigantic proportions.  This is one of, I hope, an array of examples in which different types of computational workloads can be architected ready for true cloud bursting.
 
 
 ## Architecture
@@ -143,6 +145,7 @@ sbatch scripts/r_workload_demo.sh
 ```
 
 ## KVM/libvirt Benefits
+This is one of the reasons this project has such narrow compatibility.  My apologies for this.  It might be possible to expand this to other hypervisor platforms but that will require more work and time.
 
 This project uses KVM/libvirt for optimal cloud burst simulation:
 
@@ -201,19 +204,21 @@ This guide helps researchers migrate from traditional flat file storage to NoSQL
 - ✅ **Horizontal scaling** for large datasets
 - ✅ **Cloud-native** architecture
 
-### Step 1: Choose Your NoSQL Database
+### Selection of a NoSQL Database
 
 #### MongoDB (Recommended for R)
 - **Best for**: Document-based data, JSON-like structures
 - **R Integration**: Excellent with `mongolite` package
 - **Use Cases**: Time series, experimental data, metadata
 
-#### Alternative Options:
+#### Alternative Options that I considered:
 - **Redis**: Key-value store, great for caching
 - **Cassandra**: Wide-column store, excellent for time series
 - **CouchDB**: Document database with built-in replication
 
-### Step 2: Install Required R Packages
+## Follow Along and Try It Yourself
+
+### Step 1: Install Required R Packages
 
 ```r
 # Install MongoDB connector for R
@@ -229,7 +234,7 @@ library(dplyr)
 library(lubridate)
 ```
 
-### Step 3: Convert Your Data Storage
+### Step 2: Convert Your Data Storage
 
 #### Before: Traditional Flat Files
 ```r
@@ -246,7 +251,7 @@ load("data/experiment_001.Rdata")
 # NEW APPROACH - MongoDB
 # Connect to database
 con <- mongo(collection = "experiments", db = "research_db", 
-             url = "mongodb://192.168.50.16:27017")
+             url = "mongodb://mongodb-cluster:27017")
 
 # Save data to database
 con$insert(my_data)
@@ -255,7 +260,7 @@ con$insert(my_data)
 my_data <- con$find('{"experiment_id": "001"}')
 ```
 
-### Step 4: Modify Your R Scripts
+### Step 3: Modify Your R Scripts
 
 #### Example 1: Basic Data Storage Migration
 
@@ -275,7 +280,7 @@ save(results, file = "results/experiment_001_results.Rdata")
 ```r
 # Connect to MongoDB
 con <- mongo(collection = "experiments", db = "research_db", 
-             url = "mongodb://192.168.50.16:27017")
+             url = "mongodb://mongodb-cluster:27017")
 
 # Load experimental data from database
 my_data <- con$find('{"experiment_id": "001"}')
@@ -285,7 +290,7 @@ results <- process_data(my_data)
 
 # Save results to database
 results_con <- mongo(collection = "results", db = "research_db", 
-                     url = "mongodb://192.168.50.16:27017")
+                     url = "mongodb://mongodb-cluster:27017")
 results_con$insert(results)
 ```
 
@@ -306,7 +311,7 @@ hourly_data <- sensor_data %>%
 ```r
 # Connect to MongoDB
 con <- mongo(collection = "sensor_data", db = "research_db", 
-             url = "mongodb://192.168.50.16:27017")
+             url = "mongodb://mongodb-cluster:27017")
 
 # Load time series data from database
 sensor_data <- con$find('{"timestamp": {"$gte": "2024-01-01"}}')
@@ -320,7 +325,7 @@ hourly_data <- sensor_data %>%
   summarise(avg_value = mean(value))
 ```
 
-### Step 5: Handle Distributed Computing
+### Step 4: Handle Distributed Computing
 
 #### Slurm Job Script with NoSQL
 
@@ -367,7 +372,7 @@ con <- mongo(collection = "experiments", db = "research_db",
 # Your analysis code here...
 ```
 
-### Step 6: Data Migration Strategies
+### Step 5: Data Migration Strategies
 
 #### Strategy 1: Gradual Migration
 ```r
@@ -378,7 +383,7 @@ migrate_rdata_to_mongodb <- function(file_path, collection_name) {
   
   # Connect to MongoDB
   con <- mongo(collection = collection_name, db = "research_db", 
-               url = "mongodb://192.168.50.16:27017")
+               url = "mongodb://mongodb-cluster:27017")
   
   # Insert data
   con$insert(get(ls()[1]))  # Get the first object from the Rdata file
@@ -394,12 +399,15 @@ for (file in files) {
 ```
 
 #### Strategy 2: Hybrid Approach
+
+This is a bit sloppy, but perhaps less prone to be disruptive to individuals on a collaborative research project.
+
 ```r
 # Check if data exists in MongoDB, fallback to file
 load_data_smart <- function(experiment_id) {
   # Try MongoDB first
   con <- mongo(collection = "experiments", db = "research_db", 
-               url = "mongodb://192.168.50.16:27017")
+               url = "mongodb://mongodb-cluster:27017")
   
   data <- con$find(paste0('{"experiment_id": "', experiment_id, '"}'))
   
@@ -416,7 +424,7 @@ load_data_smart <- function(experiment_id) {
 }
 ```
 
-### Step 7: Best Practices for Research Computing
+### Step 6: Best Practices for Research Computing
 
 #### 1. Data Organization
 ```r
@@ -453,7 +461,7 @@ recent_experiments <- con$find('{"timestamp": {"$gte": "2024-01-01"}}')
 connect_to_mongodb <- function() {
   tryCatch({
     con <- mongo(collection = "experiments", db = "research_db", 
-                 url = "mongodb://192.168.50.16:27017")
+                 url = "mongodb://mongodb-cluster:27017")
     return(con)
   }, error = function(e) {
     cat("MongoDB connection failed:", e$message, "\n")
@@ -463,13 +471,13 @@ connect_to_mongodb <- function() {
 }
 ```
 
-### Step 8: Performance Optimization
+### Step 7: Performance Optimization
 
 #### Connection Pooling
 ```r
 # Reuse connections in long-running jobs
 con <- mongo(collection = "experiments", db = "research_db", 
-             url = "mongodb://192.168.50.16:27017")
+             url = "mongodb://mongodb-cluster:27017")
 
 # Use the same connection for multiple operations
 for (i in 1:1000) {
@@ -514,7 +522,7 @@ log_analysis <- function(experiment_id, status) {
   )
   
   log_con <- mongo(collection = "analysis_logs", db = "research_db", 
-                   url = "mongodb://192.168.50.16:27017")
+                   url = "mongodb://mongodb-cluster:27017")
   log_con$insert(log_entry)
 }
 ```
@@ -545,7 +553,7 @@ library(dplyr)
 
 # Connect to MongoDB
 con <- mongo(collection = "experiments", db = "research_db", 
-             url = "mongodb://192.168.50.16:27017")
+             url = "mongodb://mongodb-cluster:27017")
 
 # Load data from database
 my_data <- con$find('{"experiment_id": "001"}')
@@ -558,7 +566,7 @@ results <- my_data %>%
 
 # Save results to database
 results_con <- mongo(collection = "results", db = "research_db", 
-                     url = "mongodb://192.168.50.16:27017")
+                     url = "mongodb://mongodb-cluster:27017")
 results_con$insert(results)
 
 # Log completion
@@ -573,7 +581,7 @@ log_analysis("001", "completed")
 test_mongodb_connection <- function() {
   tryCatch({
     con <- mongo(collection = "test", db = "test", 
-                 url = "mongodb://192.168.50.16:27017")
+                 url = "mongodb://mongodb-cluster:27017")
     con$insert(list(test = "connection"))
     con$drop()
     return(TRUE)

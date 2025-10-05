@@ -1,0 +1,111 @@
+# R Package Configuration
+# Users can modify these lists to customize their R environment
+
+# System packages (installed via apt)
+r_system_packages:
+  - r-base
+  - r-base-dev
+  - r-cran-dplyr
+  - r-cran-ggplot2
+  - r-cran-data.table
+  - r-cran-jsonlite
+  - r-cran-httr
+  - r-cran-rmarkdown
+  - r-cran-knitr
+  - r-cran-shiny
+  - r-cran-plotly
+  - r-cran-lubridate
+  - r-cran-stringr
+  - r-cran-readr
+  - r-cran-tidyr
+  - r-cran-purrr
+  - r-cran-magrittr
+  - r-cran-glue
+  - r-cran-scales
+  - r-cran-viridis
+
+# R packages installed via install.packages() (from CRAN)
+r_cran_packages:
+  - mongolite
+  - DBI
+  - RSQLite
+  - RMySQL
+  - RPostgreSQL
+  - odbc
+  - pool
+  - config
+  - yaml
+  - xml2
+  - curl
+  - openssl
+  - digest
+  - base64enc
+  - Rcpp
+  - RcppArmadillo
+  - RcppEigen
+  - Matrix
+  - lattice
+  - mgcv
+  - nlme
+  - survival
+  - MASS
+  - cluster
+  - foreign
+  - nnet
+  - spatial
+  - rpart
+  - class
+  - nnet
+  - boot
+  - splines
+  - stats
+  - utils
+  - grDevices
+  - graphics
+  - methods
+  - datasets
+  - tools
+  - parallel
+  - compiler
+  - grid
+  - tcltk
+  - KernSmooth
+  - MASS
+  - class
+  - nnet
+  - spatial
+  - rpart
+  - foreign
+  - cluster
+  - survival
+  - mgcv
+  - nlme
+  - lattice
+  - Matrix
+  - Rcpp
+  - RcppArmadillo
+  - RcppEigen
+  - base64enc
+  - digest
+  - openssl
+  - curl
+  - xml2
+  - yaml
+  - config
+  - pool
+  - odbc
+  - RPostgreSQL
+  - RMySQL
+  - RSQLite
+  - DBI
+  - mongolite
+
+# CRAN repository URL
+r_cran_repo: "https://cran.rstudio.com/"
+
+# Additional R package installation options
+r_install_options:
+  repos: "{{ r_cran_repo }}"
+  dependencies: true
+  upgrade: "never"
+  type: "source"

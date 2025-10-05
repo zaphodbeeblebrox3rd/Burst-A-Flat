@@ -1,15 +1,7 @@
 ---
-- name: Install R and dependencies
+- name: Install R and system dependencies
   ansible.builtin.apt:
-    name:
-      - r-base
-      - r-base-dev
-      - r-cran-rmongodb
-      - r-cran-dplyr
-      - r-cran-ggplot2
-      - r-cran-data.table
-      - r-cran-jsonlite
-      - r-cran-httr
+    name: "{{ r_system_packages }}"
     state: present
     lock_timeout: 300
   retries: 3
@@ -17,11 +9,26 @@
 
 - name: Install R packages via R
   ansible.builtin.shell: |
-    R --slave -e "install.packages(c('mongolite', 'DBI', 'RSQLite'), repos='https://cran.rstudio.com/')"
+    R --slave -e "
+    packages <- c({{ r_cran_packages | map('quote') | join(', ') }})
+    install.packages(packages, repos='{{ r_cran_repo }}', dependencies=TRUE, type='source')
+    "
   args:
     creates: /tmp/r_packages_installed
+  retries: 3
+  delay: 30
 
 - name: Mark R packages as installed
   ansible.builtin.file:
     path: /tmp/r_packages_installed
     state: touch
+
+- name: Verify R installation
+  ansible.builtin.shell: |
+    R --version
+  register: r_version
+  changed_when: false
+
+- name: Display R version
+  ansible.builtin.debug:
+    msg: "R version installed: {{ r_version.stdout_lines[0] }}"

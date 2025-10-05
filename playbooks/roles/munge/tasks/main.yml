@@ -29,6 +29,16 @@
   become: no
   when: inventory_hostname == groups['slurm_controllers'][0]
 
+- name: Set munge key status for all nodes
+  ansible.builtin.set_fact:
+    munge_key_status: "{{ munge_key_status.stdout }}"
+  when: inventory_hostname == groups['slurm_controllers'][0]
+
+- name: Set default munge key status for non-controller nodes
+  ansible.builtin.set_fact:
+    munge_key_status: "missing"
+  when: inventory_hostname != groups['slurm_controllers'][0]
+
 - name: Create passwords directory
   ansible.builtin.file:
     path: "{{ playbook_dir }}/../passwords"
@@ -38,7 +48,7 @@
   become: no
   when: 
     - inventory_hostname == groups['slurm_controllers'][0]
-    - munge_key_status.stdout != "encrypted"
+    - munge_key_status != "encrypted"
 
 - name: Create vault password file if missing
   ansible.builtin.shell: |
@@ -58,7 +68,7 @@
   become: yes
   when: 
     - inventory_hostname == groups['slurm_controllers'][0]
-    - munge_key_status.stdout != "encrypted"
+    - munge_key_status != "encrypted"
 
 - name: Set munge key permissions (controller only)
   ansible.builtin.file:
@@ -76,7 +86,7 @@
   become: yes
   when: 
     - inventory_hostname == groups['slurm_controllers'][0]
-    - munge_key_status.stdout != "encrypted"
+    - munge_key_status != "encrypted"
 
 - name: Encrypt munge key with ansible-vault
   ansible.builtin.shell: |
@@ -86,7 +96,7 @@
   become: no
   when: 
     - inventory_hostname == groups['slurm_controllers'][0]
-    - munge_key_status.stdout != "encrypted"
+    - munge_key_status != "encrypted"
 
 - name: Deploy munge key from vault (controller only)
   ansible.builtin.shell: |
@@ -95,7 +105,7 @@
   become: no
   when: 
     - inventory_hostname == groups['slurm_controllers'][0]
-    - munge_key_status.stdout == "encrypted"
+    - munge_key_status == "encrypted"
 
 - name: Copy decrypted munge key to controller
   ansible.builtin.copy:
@@ -107,7 +117,7 @@
   become: yes
   when: 
     - inventory_hostname == groups['slurm_controllers'][0]
-    - munge_key_status.stdout == "encrypted"
+    - munge_key_status == "encrypted"
 
 - name: Copy munge key from vault to all nodes
   ansible.builtin.shell: |
@@ -116,7 +126,7 @@
   become: no
   when: 
     - inventory_hostname != groups['slurm_controllers'][0]
-    - munge_key_status.stdout == "encrypted"
+    - munge_key_status == "encrypted"
 
 - name: Copy decrypted munge key to all nodes
   ansible.builtin.copy:
@@ -128,7 +138,7 @@
   become: yes
   when: 
     - inventory_hostname != groups['slurm_controllers'][0]
-    - munge_key_status.stdout == "encrypted"
+    - munge_key_status == "encrypted"
 
 - name: Copy munge key from controller to all nodes (fallback)
   ansible.builtin.copy:
@@ -140,7 +150,7 @@
     remote_src: yes
   when: 
     - inventory_hostname != groups['slurm_controllers'][0]
-    - munge_key_status.stdout != "encrypted"
+    - munge_key_status != "encrypted"
   delegate_to: "{{ groups['slurm_controllers'][0] }}"
 
 - name: Start and enable munge service
