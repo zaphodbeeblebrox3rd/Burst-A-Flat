@@ -8,14 +8,6 @@
   args:
     creates: /etc/udev/rules.d/99-slurm-cgroup.rules
 
-- name: Create cgroup configuration
-  ansible.builtin.template:
-    src: cgroup.conf.j2
-    dest: /etc/slurm/cgroup.conf
-    owner: slurm
-    group: slurm
-    mode: '0644'
-
 - name: Create base systemd service for slurmd
   ansible.builtin.template:
     src: slurmd.service.j2

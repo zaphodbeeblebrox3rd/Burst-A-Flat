@@ -2,8 +2,7 @@
 - name: Install Slurm dependencies
   ansible.builtin.apt:
     name:
-      - libmunge-dev
-      - libssl-dev
+      - libmunge-dev      
       - libpam0g-dev
       - libnuma-dev
       - libhwloc-dev

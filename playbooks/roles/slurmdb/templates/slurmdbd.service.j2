@@ -1,0 +1,17 @@
+[Unit]
+Description=SLURM database daemon
+After=network.target munge.service mariadb.service
+Wants=munge.service mariadb.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/sysconfig/slurmdbd
+ExecStart=/usr/local/sbin/slurmdbd -D $SLURMDBD_OPTIONS
+ExecReload=/bin/kill -HUP $MAINPID
+PIDFile=/var/run/slurm/slurmdbd.pid
+KillMode=process
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

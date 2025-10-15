@@ -1,7 +1,7 @@
 # Slurm configuration for controller
 ClusterName={{ cluster_name }}
-ControlMachine={{ inventory_hostname }}
-ControlAddr={{ ansible_host }}
+ControlMachine={{ groups['slurm_controllers'][0] }}
+ControlAddr={{ hostvars[groups['slurm_controllers'][0]]['ansible_host'] }}
 SlurmUser=slurm
 SlurmdUser=root
 SlurmctldPort=6817
@@ -12,8 +12,8 @@ SwitchType=switch/none
 MpiDefault=none
 SlurmctldPidFile=/run/slurmctld.pid
 SlurmdPidFile=/run/slurmd.pid
-ProctrackType=proctrack/cgroup
-TaskPlugin=task/cgroup
+ProctrackType=proctrack/linuxproc
+TaskPlugin=task/none
 SchedulerType=sched/backfill
 SelectType=select/linear
 SlurmctldLogFile=/var/log/slurm/slurmctld.log
@@ -34,5 +34,5 @@ PartitionName=compute Nodes={{ groups['slurm_computes'] | join(',') }} Default=Y
 
 # Node definitions
 {% for host in groups['slurm_computes'] %}
-NodeName={{ host }} CPUs=4 Sockets=1 CoresPerSocket=2 ThreadsPerCore=2 State=UNKNOWN
+NodeName={{ host }} CPUs=4 Sockets=1 CoresPerSocket=2 ThreadsPerCore=2 State=IDLE
 {% endfor %}

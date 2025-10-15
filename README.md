@@ -54,8 +54,8 @@ graph TB
     end
     
     subgraph "Network 2 - Cloud Simulation (192.168.60.0/24)"
-        C3[Compute Node 3<br/>192.168.60.10]
-        C4[Compute Node 4<br/>192.168.60.11]
+        C3[Compute Node 3<br/>192.168.60.16]
+        C4[Compute Node 4<br/>192.168.60.17]
         N2[NoSQL Node 2<br/>192.168.60.12<br/>MongoDB Replica]
     end
     

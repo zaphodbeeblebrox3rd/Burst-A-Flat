@@ -16,8 +16,8 @@ Burst-A-Flat is a Slurm cluster designed to demonstrate cloud burst scenarios wh
 - **nosql-node-1** (192.168.50.16): MongoDB primary instance
 
 ### Network 2 (Cloud Simulation) - 192.168.60.0/24
-- **compute-node-3** (192.168.60.10): Cloud compute node
-- **compute-node-4** (192.168.60.11): Cloud compute node
+- **compute-node-3** (192.168.60.16): Cloud compute node
+- **compute-node-4** (192.168.60.17): Cloud compute node
 - **nosql-node-2** (192.168.60.12): MongoDB replica instance
 
 ## Component Details

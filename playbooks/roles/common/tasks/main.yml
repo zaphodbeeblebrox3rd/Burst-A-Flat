@@ -122,4 +122,13 @@
     owner: slurm
     group: slurm
     mode: '0644'
-  when: inventory_hostname in groups['slurm_computes']
+  when: inventory_hostname in groups['slurm_computes'] or inventory_hostname in groups['slurm_login']
+
+- name: Create cgroup configuration
+  ansible.builtin.template:
+    src: cgroup.conf.j2
+    dest: /etc/slurm/cgroup.conf
+    owner: slurm
+    group: slurm
+    mode: '0644'
+  when: inventory_hostname in groups['slurm_controllers'] or inventory_hostname in groups['slurm_computes'] or inventory_hostname in groups['slurm_login']

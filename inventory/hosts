@@ -8,8 +8,8 @@ compute-node-2 ansible_host=192.168.50.15
 nosql-node-1 ansible_host=192.168.50.16
 
 [network2]
-compute-node-3 ansible_host=192.168.60.10
-compute-node-4 ansible_host=192.168.60.11
+compute-node-3 ansible_host=192.168.60.16
+compute-node-4 ansible_host=192.168.60.17
 nosql-node-2 ansible_host=192.168.60.12
 
 [slurm_controllers]

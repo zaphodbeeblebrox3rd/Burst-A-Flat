@@ -1,11 +1,11 @@
 # Slurm configuration file
 ClusterName={{ cluster_name }}
-ControlMachine={{ inventory_hostname }}
-ControlAddr={{ ansible_host }}
+ControlMachine={{ groups['slurm_controllers'][0] }}
+ControlAddr={{ hostvars[groups['slurm_controllers'][0]]['ansible_host'] }}
 
 # SlurmDB configuration
-SlurmUser=slurm
-SlurmdUser=slurm
+# SlurmUser=slurm  # Commented out - run as root for proper authentication
+SlurmdUser=root
 SlurmctldPort=6817
 SlurmdPort=6818
 StateSaveLocation=/var/spool/slurm/ctld
@@ -24,13 +24,13 @@ SchedulerType=sched/builtin
 SchedulerParameters=bf_continue
 SelectType=select/linear
 
-# Task and process tracking with cgroup v2
-ProctrackType=proctrack/cgroup
-TaskPlugin=task/cgroup
+# Task and process tracking - using basic process tracking instead of cgroup
+ProctrackType=proctrack/linuxproc
+TaskPlugin=task/none
 
 # Node definitions
 {% for host in groups['slurm_computes'] %}
-NodeName={{ hostvars[host]['inventory_hostname'] }} CPUs=4 Sockets=1 CoresPerSocket=2 ThreadsPerCore=2 State=UNKNOWN
+NodeName={{ hostvars[host]['inventory_hostname'] }} CPUs=4 Sockets=1 CoresPerSocket=2 ThreadsPerCore=2 State=IDLE
 {% endfor %}
 
 # Partition definitions

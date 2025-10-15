@@ -79,12 +79,31 @@
     port: 27017
     delay: 10
 
-- name: Wait for MongoDB primary to be ready
-  ansible.builtin.wait_for:
-    host: "{{ hostvars[groups['mongodb_primary'][0]]['ansible_host'] }}"
-    port: 27017
-    delay: 10
-    timeout: 60
+- name: Test network connectivity to primary node
+  ansible.builtin.shell: |
+    ping -c 3 {{ hostvars[groups['mongodb_primary'][0]]['ansible_host'] }}
+  register: ping_primary
+  failed_when: ping_primary.rc != 0
+
+- name: Test hostname resolution to primary
+  ansible.builtin.shell: |
+    nslookup {{ hostvars[groups['mongodb_primary'][0]]['inventory_hostname'] }}
+  register: dns_primary
+  failed_when: dns_primary.rc != 0
+
+- name: Wait for MongoDB primary to be in PRIMARY state
+  ansible.builtin.shell: |
+    mongosh --host {{ hostvars[groups['mongodb_primary'][0]]['ansible_host'] }}:27017 --eval "rs.status().myState" --quiet
+  register: primary_state
+  until: primary_state.stdout.strip() == "1"
+  retries: 10
+  delay: 10
+
+- name: Check if replica is already in replica set
+  ansible.builtin.shell: |
+    mongosh --host {{ hostvars[groups['mongodb_primary'][0]]['ansible_host'] }}:27017 --eval "rs.status()" --quiet
+  register: rs_status_check
+  failed_when: false
 
 - name: Add replica to MongoDB replica set
   ansible.builtin.shell: |
@@ -92,7 +111,8 @@
   args:
     creates: /tmp/mongodb_replica_added
   register: mongodb_add
-  failed_when: mongodb_add.rc != 0 and "already a member" not in mongodb_add.stderr
+  failed_when: mongodb_add.rc != 0 and "already a member" not in mongodb_add.stderr and "not yet propagated" not in mongodb_add.stderr
+  when: rs_status_check.stdout is not defined or "{{ ansible_host }}" not in rs_status_check.stdout
 
 - name: Mark replica as added
   ansible.builtin.file:

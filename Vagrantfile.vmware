@@ -8,7 +8,7 @@ Vagrant.configure("2") do |config|
   
 # Network configuration for vSphere
 config.vm.network "private_network", ip: "192.168.50.10", vsphere__intnet: "network1"
-config.vm.network "private_network", ip: "192.168.60.10", vsphere__intnet: "network2"
+config.vm.network "private_network", ip: "192.168.60.11", vsphere__intnet: "network2"
 
 # Provider configuration for vSphere
 config.vm.provider "vsphere" do |vmw|
@@ -98,7 +98,7 @@ config.vm.provider "vsphere" do |vmw|
   # Compute Node 3 (Network 2) - Cloud simulation
   config.vm.define "compute-node-3" do |comp3|
     comp3.vm.hostname = "compute-node-3"
-    comp3.vm.network "private_network", ip: "192.168.60.10", vsphere__intnet: "network2"
+    comp3.vm.network "private_network", ip: "192.168.60.16", vsphere__intnet: "network2"
     comp3.vm.provider "vsphere" do |vmw|
       vmw.name = "compute-node-3"
       vmw.memory = "2048"
@@ -109,7 +109,7 @@ config.vm.provider "vsphere" do |vmw|
   # Compute Node 4 (Network 2) - Cloud simulation
   config.vm.define "compute-node-4" do |comp4|
     comp4.vm.hostname = "compute-node-4"
-    comp4.vm.network "private_network", ip: "192.168.60.11", vsphere__intnet: "network2"
+    comp4.vm.network "private_network", ip: "192.168.60.17", vsphere__intnet: "network2"
     comp4.vm.provider "vsphere" do |vmw|
       vmw.name = "compute-node-4"
       vmw.memory = "2048"

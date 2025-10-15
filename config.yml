@@ -80,14 +80,14 @@ vms:
   
   compute-node-3:
     hostname: "compute-node-3"
-    ip_network2: "192.168.60.10"
+    ip_network2: "192.168.60.16"
     memory: 2048
     cpus: 4
     roles: ["compute", "slurm_compute"]
   
   compute-node-4:
     hostname: "compute-node-4"
-    ip_network2: "192.168.60.11"
+    ip_network2: "192.168.60.17"
     memory: 2048
     cpus: 4
     roles: ["compute", "slurm_compute"]

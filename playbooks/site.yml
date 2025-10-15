@@ -5,6 +5,13 @@
   gather_facts: yes
     
   pre_tasks:
+    - name: Fix broken Ubuntu mirrors
+      ansible.builtin.replace:
+        path: /etc/apt/sources.list
+        regexp: 'mirrors\.edge\.kernel\.org'
+        replace: 'archive.ubuntu.com'
+      become: yes
+
     - name: Update package cache and upgrade packages
       ansible.builtin.apt:
         update_cache: yes
@@ -14,9 +21,20 @@
       delay: 90
 
   roles:
-    - role: common
     - role: munge
+    - role: common
     - role: slurm
+
+- name: Wait for SlurmDB to be ready
+  hosts: slurm_controllers
+  become: yes
+  tasks:
+    - name: Wait for SlurmDB port to be available
+      ansible.builtin.wait_for:
+        host: "{{ hostvars[groups['slurmdb'][0]]['ansible_host'] }}"
+        port: 6819
+        timeout: 60
+      delegate_to: "{{ groups['slurmdb'][0] }}"
 
 - name: Configure Slurm Controller
   hosts: slurm_controllers
@@ -59,6 +77,7 @@
   hosts: slurm_login
   become: yes
   roles:
+    - role: common
     - role: r_environment
 
 - name: Configure MariaDB for SlurmDB
@@ -119,13 +138,17 @@
     - name: Read shared public key content for authorized_keys
       ansible.builtin.shell: |
         cat /home/vagrant/.ssh/id_ed25519_internal.pub
-      when: inventory_hostname == groups['slurm_controllers'][0]
+      delegate_to: "{{ groups['slurm_controllers'][0] }}"
       register: shared_public_key
+
+    - name: Set shared public key fact for all hosts
+      ansible.builtin.set_fact:
+        shared_public_key_content: "{{ shared_public_key.stdout }}"
 
     - name: Add shared public key to authorized_keys on all nodes
       ansible.builtin.authorized_key:
         user: vagrant
-        key: "{{ shared_public_key.stdout }}"
+        key: "{{ shared_public_key_content }}"
         state: present
 
     - name: Configure SSH to use internal key by default
@@ -150,7 +173,7 @@
       vars:
         slurm_services: >-
           {%- if inventory_hostname in groups['slurm_controllers'] -%}
-            {{ ['munge', 'slurmd', 'slurmctld'] }}
+            {{ ['munge', 'slurmctld'] }}
           {%- elif inventory_hostname in groups['slurm_computes'] -%}
             {{ ['munge', 'slurmd'] }}
           {%- else -%}
@@ -172,12 +195,6 @@
         - /home/vagrant/shared/results
       when: inventory_hostname in groups['slurm_login']
 
-    - name: Set up SSH keys for passwordless access
-      ansible.builtin.authorized_key:
-        user: vagrant
-        key: "{{ ssh_public_key }}"
-        state: present
-      when: ssh_public_key != ''
 
     - name: Copy sample data generation script
       ansible.builtin.copy:
@@ -213,6 +230,156 @@
         - inventory_hostname in groups['slurm_login']
         - sample_data_result.rc == 0
 
+    - name: Wait for Slurm controller to be ready
+      ansible.builtin.wait_for:
+        port: 6817
+        host: "{{ hostvars[groups['slurm_controllers'][0]]['ansible_host'] }}"
+        timeout: 30
+      delegate_to: "{{ groups['slurm_login'][0] }}"
+
+    - name: Test controller connectivity from login node
+      ansible.builtin.shell: |
+        ping -c 3 {{ hostvars[groups['slurm_controllers'][0]]['ansible_host'] }}
+      register: controller_ping
+      delegate_to: "{{ groups['slurm_login'][0] }}"
+      failed_when: controller_ping.rc != 0
+
+    - name: Test controller port connectivity
+      ansible.builtin.wait_for:
+        port: 6817
+        host: "{{ hostvars[groups['slurm_controllers'][0]]['ansible_host'] }}"
+        timeout: 10
+      delegate_to: "{{ groups['slurm_login'][0] }}"
+
+    - name: Check controller service status
+      ansible.builtin.shell: |
+        systemctl status slurmctld
+      register: controller_status
+      delegate_to: "{{ groups['slurm_controllers'][0] }}"
+      failed_when: false
+
+    - name: Debug controller status
+      ansible.builtin.debug:
+        var: controller_status.stdout
+
+    - name: Check if slurmctld is actually running
+      ansible.builtin.shell: |
+        ps aux | grep slurmctld | grep -v grep
+      register: slurmctld_process
+      delegate_to: "{{ groups['slurm_controllers'][0] }}"
+      failed_when: false
+
+    - name: Debug slurmctld process
+      ansible.builtin.debug:
+        var: slurmctld_process.stdout
+
+    - name: Check what's listening on port 6817
+      ansible.builtin.shell: |
+        netstat -tlnp | grep 6817
+      register: port_6817_check
+      delegate_to: "{{ groups['slurm_controllers'][0] }}"
+      failed_when: false
+
+    - name: Debug port 6817
+      ansible.builtin.debug:
+        var: port_6817_check.stdout
+
+    - name: Check slurmctld logs for errors
+      ansible.builtin.shell: |
+        tail -20 /var/log/slurm/slurmctld.log
+      register: slurmctld_logs
+      delegate_to: "{{ groups['slurm_controllers'][0] }}"
+      failed_when: false
+
+    - name: Debug slurmctld logs
+      ansible.builtin.debug:
+        var: slurmctld_logs.stdout
+
+    - name: Check slurm.conf on controller
+      ansible.builtin.shell: |
+        cat /etc/slurm/slurm.conf | grep -E "(ControlMachine|ControlAddr|ClusterName)"
+      register: controller_slurm_conf
+      delegate_to: "{{ groups['slurm_controllers'][0] }}"
+      failed_when: false
+
+    - name: Debug controller slurm.conf
+      ansible.builtin.debug:
+        var: controller_slurm_conf.stdout
+
+    - name: Check slurm.conf on login node
+      ansible.builtin.shell: |
+        cat /etc/slurm/slurm.conf | grep -E "(ControlMachine|ControlAddr|ClusterName)"
+      register: login_slurm_conf
+      delegate_to: "{{ groups['slurm_login'][0] }}"
+      failed_when: false
+
+    - name: Debug login slurm.conf
+      ansible.builtin.debug:
+        var: login_slurm_conf.stdout
+
+    - name: Check Munge key on controller
+      ansible.builtin.shell: |
+        md5sum /etc/munge/munge.key
+      register: controller_munge_key
+      delegate_to: "{{ groups['slurm_controllers'][0] }}"
+      failed_when: false
+
+    - name: Debug controller Munge key
+      ansible.builtin.debug:
+        var: controller_munge_key.stdout
+
+    - name: Check Munge key on login node
+      ansible.builtin.shell: |
+        md5sum /etc/munge/munge.key
+      register: login_munge_key
+      delegate_to: "{{ groups['slurm_login'][0] }}"
+      failed_when: false
+
+    - name: Debug login Munge key
+      ansible.builtin.debug:
+        var: login_munge_key.stdout
+
+    - name: Restart Munge service on all Slurm nodes
+      ansible.builtin.systemd:
+        name: munge
+        state: restarted
+      when: inventory_hostname in groups['slurm_controllers'] or inventory_hostname in groups['slurm_computes'] or inventory_hostname in groups['slurm_login']
+
+    - name: Restart Slurm controller service
+      ansible.builtin.systemd:
+        name: slurmctld
+        state: restarted
+      when: inventory_hostname in groups['slurm_controllers']
+
+    - name: Restart Slurm compute daemon service
+      ansible.builtin.systemd:
+        name: slurmd
+        state: restarted
+      when: inventory_hostname in groups['slurm_computes']
+
+
+    - name: Check Slurm configuration on login node
+      ansible.builtin.shell: |
+        cat /etc/slurm/slurm.conf | grep -E "(ControlMachine|ControlAddr|ClusterName)"
+      register: slurm_config
+      delegate_to: "{{ groups['slurm_login'][0] }}"
+      failed_when: false
+
+    - name: Debug Slurm configuration
+      ansible.builtin.debug:
+        var: slurm_config.stdout
+
+    - name: Test Slurm controller connection with verbose output
+      ansible.builtin.shell: |
+        scontrol show config | head -20
+      register: scontrol_test
+      delegate_to: "{{ groups['slurm_login'][0] }}"
+      failed_when: false
+
+    - name: Debug scontrol output
+      ansible.builtin.debug:
+        var: scontrol_test.stdout
+
     - name: Validate Slurm cluster is operational
       ansible.builtin.shell: |
         sinfo --format="%.10N %.5D %.6t %.10M %.6D %R" --noheader
@@ -220,6 +387,8 @@
       delegate_to: "{{ groups['slurm_login'][0] }}"
       failed_when: sinfo_output.rc != 0
       changed_when: false
+      retries: 3
+      delay: 10
 
     - name: Display cluster validation results
       ansible.builtin.debug:

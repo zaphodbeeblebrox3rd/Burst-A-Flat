@@ -7,6 +7,20 @@
     group: slurm
     mode: '0600'
 
+- name: Create systemd service for slurmdbd
+  ansible.builtin.template:
+    src: slurmdbd.service.j2
+    dest: /etc/systemd/system/slurmdbd.service
+    mode: '0644'
+
+- name: Create PID directory for slurmdbd
+  ansible.builtin.file:
+    path: /var/run/slurm
+    state: directory
+    owner: slurm
+    group: slurm
+    mode: '0755'
+
 - name: Create systemd override directory for slurmdbd
   ansible.builtin.file:
     path: /etc/systemd/system/slurmdbd.service.d

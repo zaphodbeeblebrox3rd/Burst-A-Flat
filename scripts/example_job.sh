@@ -35,8 +35,8 @@ ping -c 1 192.168.50.13 >/dev/null 2>&1 && echo "✅ SlurmDB node reachable" || 
 echo ""
 
 echo "Network 2 (Cloud simulation):"
-ping -c 1 192.168.60.10 >/dev/null 2>&1 && echo "✅ Compute node 3 reachable" || echo "❌ Compute node 3 not reachable"
-ping -c 1 192.168.60.11 >/dev/null 2>&1 && echo "✅ Compute node 4 reachable" || echo "❌ Compute node 4 not reachable"
+ping -c 1 192.168.60.16 >/dev/null 2>&1 && echo "✅ Compute node 3 reachable" || echo "❌ Compute node 3 not reachable"
+ping -c 1 192.168.60.17 >/dev/null 2>&1 && echo "✅ Compute node 4 reachable" || echo "❌ Compute node 4 not reachable"
 echo ""
 
 # Check NFS mount (only on Network 1)

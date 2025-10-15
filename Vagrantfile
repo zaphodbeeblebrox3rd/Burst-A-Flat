@@ -237,7 +237,7 @@ Vagrant.configure("2") do |config|
   # compute-node-3 - 
   config.vm.define "compute-node-3" do |compute_node_3|
     compute_node_3.vm.hostname = "compute-node-3"
-    compute_node_3.vm.network "private_network", ip: "192.168.60.10", libvirt__network_name: "cloud-network"
+    compute_node_3.vm.network "private_network", ip: "192.168.60.16", libvirt__network_name: "cloud-network"
     compute_node_3.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
@@ -267,7 +267,7 @@ Vagrant.configure("2") do |config|
   # compute-node-4 - 
   config.vm.define "compute-node-4" do |compute_node_4|
     compute_node_4.vm.hostname = "compute-node-4"
-    compute_node_4.vm.network "private_network", ip: "192.168.60.11", libvirt__network_name: "cloud-network"
+    compute_node_4.vm.network "private_network", ip: "192.168.60.17", libvirt__network_name: "cloud-network"
     compute_node_4.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh

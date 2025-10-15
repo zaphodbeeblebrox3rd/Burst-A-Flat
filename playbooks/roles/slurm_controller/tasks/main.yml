@@ -8,14 +8,6 @@
     mode: '0644'
 
 
-- name: Create cgroup configuration
-  ansible.builtin.template:
-    src: cgroup.conf.j2
-    dest: /etc/slurm/cgroup.conf
-    owner: slurm
-    group: slurm
-    mode: '0644'
-
 - name: Create systemd service for slurmctld
   ansible.builtin.template:
     src: slurmctld.service.j2

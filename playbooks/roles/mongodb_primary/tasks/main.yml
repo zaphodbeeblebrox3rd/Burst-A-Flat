@@ -79,6 +79,12 @@
     port: 27017
     delay: 10
 
+- name: Check if replica set is already initialized
+  ansible.builtin.shell: |
+    mongosh --eval "rs.status()" --quiet
+  register: rs_status
+  failed_when: false
+
 - name: Initialize MongoDB replica set
   ansible.builtin.shell: |
     mongosh --eval "rs.initiate({_id: 'burst-a-flat', members: [{_id: 0, host: '{{ inventory_hostname }}:27017'}]})"
@@ -86,12 +92,63 @@
     creates: /tmp/mongodb_initialized
   register: mongodb_init
   failed_when: mongodb_init.rc != 0 and "already initialized" not in mongodb_init.stderr
+  when: rs_status.rc != 0
+
+- name: Debug replica set status
+  ansible.builtin.debug:
+    var: rs_status.stdout
+
+- name: Debug replica set initialization
+  ansible.builtin.debug:
+    var: mongodb_init.stdout
 
 - name: Wait for replica set to be ready
   ansible.builtin.wait_for:
     port: 27017
     delay: 5
     timeout: 30
+
+- name: Test network connectivity to replica node
+  ansible.builtin.shell: |
+    ping -c 3 {{ hostvars[groups['mongodb_replica'][0]]['ansible_host'] }}
+  register: ping_replica
+  failed_when: ping_replica.rc != 0
+
+- name: Test hostname resolution
+  ansible.builtin.shell: |
+    nslookup {{ hostvars[groups['mongodb_replica'][0]]['inventory_hostname'] }}
+  register: dns_test
+  failed_when: dns_test.rc != 0
+
+- name: Check current replica set state
+  ansible.builtin.shell: |
+    mongosh --eval "rs.status()" --quiet
+  register: current_rs_status
+  failed_when: false
+
+- name: Debug current replica set state
+  ansible.builtin.debug:
+    var: current_rs_status.stdout
+
+- name: Force this node to become PRIMARY
+  ansible.builtin.shell: |
+    mongosh --eval "rs.reconfig({_id: 'burst-a-flat', members: [{_id: 0, host: '{{ inventory_hostname }}:27017', priority: 2}, {_id: 1, host: '{{ hostvars[groups['mongodb_replica'][0]]['inventory_hostname'] }}:27017', priority: 1}]}, {force: true})"
+  register: reconfig_result
+  failed_when: false
+  when: current_rs_status.stdout is defined and "stateStr" in current_rs_status.stdout and "SECONDARY" in current_rs_status.stdout
+
+- name: Wait for reconfiguration to complete
+  ansible.builtin.pause:
+    seconds: 10
+  when: reconfig_result is defined and reconfig_result.rc == 0
+
+- name: Wait for MongoDB to be in PRIMARY state
+  ansible.builtin.shell: |
+    mongosh --eval "rs.status().myState" --quiet
+  register: primary_state
+  until: primary_state.stdout.strip() == "1"
+  retries: 10
+  delay: 10
 
 - name: Mark MongoDB as initialized
   ansible.builtin.file:
