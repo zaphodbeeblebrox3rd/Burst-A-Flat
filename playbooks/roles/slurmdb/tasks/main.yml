@@ -15,7 +15,7 @@
 
 - name: Create PID directory for slurmdbd
   ansible.builtin.file:
-    path: /var/run/slurm
+    path: /run/slurm
     state: directory
     owner: slurm
     group: slurm

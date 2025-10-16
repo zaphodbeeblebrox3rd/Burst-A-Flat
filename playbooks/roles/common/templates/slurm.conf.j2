@@ -50,5 +50,5 @@ SlurmdLogFile=/var/log/slurm/slurmd.log
 AccountingStorageType=accounting_storage/slurmdbd
 AccountingStorageHost={{ groups['slurmdb'][0] }}
 AccountingStoragePort=6819
-AccountingStorageUser=slurm
-AccountingStoragePass=slurm
+JobAcctGatherType=jobacct_gather/linux
+JobAcctGatherFrequency=30

@@ -26,8 +26,10 @@ SlurmdParameters=enable_configless
 AccountingStorageType=accounting_storage/slurmdbd
 AccountingStorageHost={{ groups['slurmdb'][0] }}
 AccountingStoragePort=6819
-AccountingStorageUser=slurm
-AccountingStoragePass=slurm
+
+# Enable job accounting gather
+JobAcctGatherType=jobacct_gather/linux
+JobAcctGatherFrequency=30
 
 # Partition definitions
 PartitionName=compute Nodes={{ groups['slurm_computes'] | join(',') }} Default=YES MaxTime=INFINITE State=UP

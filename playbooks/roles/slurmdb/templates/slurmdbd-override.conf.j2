@@ -1,7 +1,7 @@
 [Service]
 # Run as slurm user and set PID file location
 User=slurm
-PIDFile=/var/run/slurm/slurmdbd.pid
+PIDFile=/run/slurm/slurmdbd.pid
 
 # Prevent systemd from interfering with SlurmDBD's database operations
 PrivateDevices=false
