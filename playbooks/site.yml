@@ -25,16 +25,14 @@
     - role: common
     - role: slurm
 
-- name: Wait for SlurmDB to be ready
-  hosts: slurm_controllers
+# Note: SlurmDB must be configured before Slurm Controller to avoid dependency issues
+
+- name: Configure MariaDB for SlurmDB
+  hosts: slurmdb
   become: yes
-  tasks:
-    - name: Wait for SlurmDB port to be available
-      ansible.builtin.wait_for:
-        host: "{{ hostvars[groups['slurmdb'][0]]['ansible_host'] }}"
-        port: 6819
-        timeout: 60
-      delegate_to: "{{ groups['slurmdb'][0] }}"
+  roles:
+    - role: mariadb_server
+    - role: slurmdb
 
 - name: Configure Slurm Controller
   hosts: slurm_controllers
@@ -79,13 +77,6 @@
   roles:
     - role: common
     - role: r_environment
-
-- name: Configure MariaDB for SlurmDB
-  hosts: slurmdb
-  become: yes
-  roles:
-    - role: mariadb_server
-    - role: slurmdb
 
 - name: Configure MongoDB Primary
   hosts: mongodb_primary
@@ -389,6 +380,19 @@
       changed_when: false
       retries: 3
       delay: 10
+
+    - name: Check for NOT_RESPONDING nodes
+      ansible.builtin.shell: |
+        sinfo --format="%.6t" --noheader | grep -q "NOT_RESPONDING" && echo "NOT_RESPONDING" || echo "OK"
+      register: node_status_check
+      delegate_to: "{{ groups['slurm_login'][0] }}"
+      failed_when: false
+      changed_when: false
+
+    - name: Fail if nodes are not responding
+      ansible.builtin.fail:
+        msg: "Some compute nodes are not responding. Check munge authentication and node connectivity."
+      when: node_status_check.stdout == "NOT_RESPONDING"
 
     - name: Display cluster validation results
       ansible.builtin.debug:

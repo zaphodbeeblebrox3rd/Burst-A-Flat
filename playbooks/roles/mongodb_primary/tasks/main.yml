@@ -140,7 +140,7 @@
 - name: Wait for reconfiguration to complete
   ansible.builtin.pause:
     seconds: 10
-  when: reconfig_result is defined and reconfig_result.rc == 0
+  when: reconfig_result is defined
 
 - name: Wait for MongoDB to be in PRIMARY state
   ansible.builtin.shell: |

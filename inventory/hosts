@@ -53,4 +53,4 @@ ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/
 
 # Cluster configuration
 cluster_name=burst-a-flat
-slurm_version=25.05.3
+slurm_version=24.05.4

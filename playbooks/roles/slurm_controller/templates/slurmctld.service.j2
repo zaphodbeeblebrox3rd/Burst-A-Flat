@@ -4,7 +4,7 @@ After=network.target munge.service
 Wants=munge.service
 
 [Service]
-Type=forking
+Type=simple
 EnvironmentFile=-/etc/sysconfig/slurmctld
 ExecStart=/usr/local/sbin/slurmctld -D $SLURMCTLD_OPTIONS
 ExecReload=/bin/kill -HUP $MAINPID

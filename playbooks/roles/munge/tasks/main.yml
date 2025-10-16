@@ -116,6 +116,34 @@
     msg: |
       Munge Key Verification Results: {{ inventory_hostname }}: '{{ munge_key_verification['stdout'] }}'
 
+- name: Create munge configuration file
+  ansible.builtin.copy:
+    content: |
+      # Munge configuration
+      # Allow root authentication for system services
+      allow_root = true
+    dest: /etc/munge/munge.conf
+    owner: munge
+    group: munge
+    mode: '0600'
+  become: yes
+
+- name: Create systemd override directory for munge
+  ansible.builtin.file:
+    path: /etc/systemd/system/munge.service.d
+    state: directory
+    mode: '0755'
+
+- name: Create systemd override for munge
+  ansible.builtin.copy:
+    src: munge-override.conf
+    dest: /etc/systemd/system/munge.service.d/override.conf
+    mode: '0644'
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: yes
+
 - name: Start and enable munge service
   ansible.builtin.systemd:
     name: munge
