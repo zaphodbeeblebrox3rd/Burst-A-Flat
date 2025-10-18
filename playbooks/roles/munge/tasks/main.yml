@@ -150,6 +150,11 @@
     state: started
     enabled: yes
 
+- name: Restart munge service to ensure configuration is loaded
+  ansible.builtin.systemd:
+    name: munge
+    state: restarted
+
 - name: Clean up temporary munge key files on localhost
   ansible.builtin.file:
     path: "{{ item }}"
