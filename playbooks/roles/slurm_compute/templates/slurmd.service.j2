@@ -4,13 +4,12 @@ After=network.target munge.service
 Wants=munge.service
 
 [Service]
-Type=forking
+Type=simple
 EnvironmentFile=-/etc/sysconfig/slurmd
-ExecStart=/usr/local/sbin/slurmd
-PIDFile=/run/slurmd.pid
-KillMode=process
+ExecStart=/usr/local/sbin/slurmd -D
 Restart=on-failure
 RestartSec=5s
+TimeoutStartSec=30
 
 [Install]
 WantedBy=multi-user.target

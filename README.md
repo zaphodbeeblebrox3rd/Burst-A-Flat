@@ -7,9 +7,9 @@ You can't burst a flat tire so why this name for a project?
 
 Let's start with the term "Flat".  By flat, I am referring to a flat data file.  This is a single file or a set of files that contain a significant amount of data for computation.
 
-Now, "Burst".  "Cloud Bursting" is a buzz word that I dislike but I am using it here for a reason.  I think that some workloads might be able to survive and thrive in a hybrid cloud and cloud bursting architecture.  This project is meant to demonstrate examples of how this could be done.
+Now "Burst". It brings into mind the "Cloud Bursting" buzz word, which may actually be possible.  What needs to happen first is to "Burst" the concept of a flat data file commonly used in computing.  Computational data for High-Performance Computing belongs in a High-Performance Database. A workload that is architected thoughtfully on an infrastructure that is also architected thoughtfully can survive and thrive in a hybrid cloud and cloud bursting scenario.  This project is meant to provide working examples of how this could be done.
 
-The name is also meant to be fun! Besides a demo of a concept, this project is a fully functional slurm playground.  Other similar projects use containers to provide greater support for host OS and to run on the typical resources available to most machines.  This project is a bit selfish in that it requires Ubuntu and at least 24 GB of memory.  However I think the benefits are tremendous for anyone who wants to explore and kick the tires a bit.  Maybe install some additional packages if you wish.
+The name is also meant to be fun! Besides a demo of a concept, this project is a fully functional slurm playground.  The sacrifice that needed to be made was its ability to run on limited system resources.  Other similar projects use containers to provide broader support for host OS and to run on the memory and CPU resources available in an average laptop.  This project will only run on a Debian-family OS with at least 24 GB of memory.  However I think the benefits are tremendous for anyone with a sufficient workstation who wants to explore and kick the tires, customize the environment or install some additional packages.
 
 Whether we are data scientists or HPC engineers we likely share some paradoxical wishes:
 1. A single source of truth on our storage
@@ -22,7 +22,7 @@ Every existing worlkload is different and might need an investment of time to ma
 
 Burst-A-Flat aspires to provide an instructional example to start this path.  This project is intended to inspire; not just to fix a specific problem. This is a workshop and demonstration of a problem solved, but more importantly this is a mindset of writing new code for new projects on-premise, in the cloud, and hybrid computing environments so that our work is prepared to move to the next level.
 
-In summary, this project provides a simulation of a workload built to scale from a few CPUs to gigantic proportions.  This is one of, I hope, an array of examples in which different types of computational workloads can be architected ready for true cloud bursting.
+In summary, this project provides a simulation of a workload built to scale from a few CPUs to gigantic proportions.  
 
 
 ## Architecture
@@ -141,7 +141,7 @@ sinfo
 ### Step 5: Run R Workload Demo
 ```bash
 # This will demonstrate the cloud burst scenario
-sbatch scripts/r_workload_demo.sh
+sbatch ~/shared/scripts/r_workload_demo.sh
 ```
 
 ## KVM/libvirt Benefits
@@ -206,7 +206,7 @@ This guide helps researchers migrate from traditional flat file storage to NoSQL
 
 ### Selection of a NoSQL Database
 
-#### MongoDB (Recommended for R)
+#### MongoDB
 - **Best for**: Document-based data, JSON-like structures
 - **R Integration**: Excellent with `mongolite` package
 - **Use Cases**: Time series, experimental data, metadata
@@ -219,6 +219,9 @@ This guide helps researchers migrate from traditional flat file storage to NoSQL
 ## Follow Along and Try It Yourself
 
 ### Step 1: Install Required R Packages
+
+Connect to the login node
+```vagrant ssh login-node```
 
 ```r
 # Install MongoDB connector for R

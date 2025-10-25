@@ -6,7 +6,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
-#SBATCH --mem=2G
+#SBATCH --mem=1G
 
 # R Workload Demonstration Script
 # This script demonstrates the cloud burst scenario where traditional
@@ -19,6 +19,55 @@ echo "Date: $(date)"
 
 # Create results directory if it doesn't exist
 mkdir -p /home/vagrant/shared/results
+mkdir -p /home/vagrant/shared/data
+
+# Set proper permissions
+chmod 755 /home/vagrant/shared/results
+chmod 755 /home/vagrant/shared/data
+
+# Debug information
+echo "=== Debug Information ==="
+echo "Current user: $(whoami)"
+echo "Current directory: $(pwd)"
+echo "Node hostname: $(hostname)"
+echo "SLURM_JOB_NODELIST: $SLURM_JOB_NODELIST"
+echo "SLURM_JOB_PARTITION: $SLURM_JOB_PARTITION"
+echo ""
+
+# Check if R is available and install required packages
+echo "=== Checking R Environment ==="
+if ! command -v R &> /dev/null; then
+    echo "ERROR: R is not installed or not in PATH"
+    exit 1
+fi
+
+echo "R version: $(R --version | head -1)"
+echo ""
+
+# Install required R packages if not available
+echo "=== Installing R Packages ==="
+R --slave -e "
+if (!require('mongolite', quietly = TRUE)) {
+  cat('Installing mongolite package...\n')
+  install.packages('mongolite', repos = 'https://cran.r-project.org/')
+}
+if (!require('dplyr', quietly = TRUE)) {
+  cat('Installing dplyr package...\n')
+  install.packages('dplyr', repos = 'https://cran.r-project.org/')
+}
+if (!require('ggplot2', quietly = TRUE)) {
+  cat('Installing ggplot2 package...\n')
+  install.packages('ggplot2', repos = 'https://cran.r-project.org/')
+}
+cat('R packages check completed\n')
+"
+
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to install R packages"
+    exit 1
+fi
+
+echo ""
 
 # Run the R demonstration
 R --slave -e "
@@ -52,15 +101,32 @@ demonstrate_nosql_solution <- function() {
   # Connect to MongoDB
   tryCatch({
     # Determine MongoDB host based on network
-    if (grepl('compute-node-[3-4]', Sys.info()['nodename'])) {
+    # Use SLURM_JOB_NODELIST if available, otherwise fall back to hostname
+    node_info <- if (nchar(Sys.getenv('SLURM_JOB_NODELIST')) > 0) {
+      Sys.getenv('SLURM_JOB_NODELIST')
+    } else {
+      Sys.info()['nodename']
+    }
+    
+    cat('Node information:', node_info, '\n')
+    
+    # Determine MongoDB host based on network
+    if (grepl('compute-node-[3-4]', node_info)) {
       # Network 2 - use replica
       mongo_host <- 'nosql-node-2:27017'
+      cat('Using Network 2 (Cloud) MongoDB replica\n')
     } else {
       # Network 1 - use primary
       mongo_host <- 'nosql-node-1:27017'
+      cat('Using Network 1 (On-premises) MongoDB primary\n')
     }
     
     cat('Connecting to MongoDB at:', mongo_host, '\n')
+    
+    # Test connection first
+    test_con <- mongo(collection = 'test', db = 'test', url = paste0('mongodb://', mongo_host))
+    test_con$disconnect()
+    cat('MongoDB connection test successful\n')
     
     # Connect to MongoDB
     con <- mongo(collection = 'sample_data', db = 'burst_a_flat', url = paste0('mongodb://', mongo_host))
@@ -99,6 +165,7 @@ demonstrate_nosql_solution <- function() {
     
   }, error = function(e) {
     cat('ERROR: Failed to connect to MongoDB:', e$message, '\n')
+    cat('Error details:', toString(e), '\n')
     return(FALSE)
   })
 }
@@ -125,18 +192,27 @@ generate_sample_data <- function() {
   
   # Save to MongoDB
   tryCatch({
-    if (grepl('compute-node-[3-4]', Sys.info()['nodename'])) {
+    # Use same node detection logic as in demonstrate_nosql_solution
+    node_info <- if (nchar(Sys.getenv('SLURM_JOB_NODELIST')) > 0) {
+      Sys.getenv('SLURM_JOB_NODELIST')
+    } else {
+      Sys.info()['nodename']
+    }
+    
+    if (grepl('compute-node-[3-4]', node_info)) {
       mongo_host <- 'nosql-node-2:27017'
     } else {
       mongo_host <- 'nosql-node-1:27017'
     }
     
+    cat('Saving to MongoDB at:', mongo_host, '\n')
     con <- mongo(collection = 'sample_data', db = 'burst_a_flat', url = paste0('mongodb://', mongo_host))
     con$insert(sample_data)
     con$disconnect()
     cat('Data saved to MongoDB at:', mongo_host, '\n')
   }, error = function(e) {
     cat('ERROR: Failed to save to MongoDB:', e$message, '\n')
+    cat('Error details:', toString(e), '\n')
   })
   
   return(sample_data)
@@ -144,8 +220,16 @@ generate_sample_data <- function() {
 
 # Main execution
 cat('R Workload Demonstration Started\n')
-cat('Node:', Sys.info()['nodename'], '\n')
-cat('Network:', ifelse(grepl('compute-node-[3-4]', Sys.info()['nodename']), 'Network 2 (Cloud)', 'Network 1 (On-Premises)'), '\n\n')
+
+# Use consistent node detection
+node_info <- if (nchar(Sys.getenv('SLURM_JOB_NODELIST')) > 0) {
+  Sys.getenv('SLURM_JOB_NODELIST')
+} else {
+  Sys.info()['nodename']
+}
+
+cat('Node:', node_info, '\n')
+cat('Network:', ifelse(grepl('compute-node-[3-4]', node_info), 'Network 2 (Cloud)', 'Network 1 (On-Premises)'), '\n\n')
 
 # Generate sample data first
 sample_data <- generate_sample_data()

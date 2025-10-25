@@ -30,7 +30,7 @@ TaskPlugin=task/none
 
 # Node definitions
 {% for host in groups['slurm_computes'] %}
-NodeName={{ hostvars[host]['inventory_hostname'] }} CPUs=4 Sockets=1 CoresPerSocket=2 ThreadsPerCore=2 State=IDLE
+NodeName={{ hostvars[host]['inventory_hostname'] }} CPUs=4 Sockets=4 CoresPerSocket=1 ThreadsPerCore=1 RealMemory=1024 State=IDLE
 {% endfor %}
 
 # Partition definitions
