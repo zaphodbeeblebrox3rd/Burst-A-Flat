@@ -22,11 +22,17 @@
   retries: 3
   delay: 90
 
-- name: Stop existing MongoDB service (if running)
+- name: Stop existing MongoDB mongos service (if running)
   ansible.builtin.systemd:
-    name: mongod
+    name: mongos
     state: stopped
   failed_when: false
+
+- name: Ensure MongoDB shard service is running
+  ansible.builtin.systemd:
+    name: mongod
+    state: started
+    enabled: yes
 
 - name: Create MongoDB mongos configuration
   ansible.builtin.template:
@@ -57,11 +63,34 @@
     delay: 5
     timeout: 60
 
+- name: Wait for shard replica sets to be ready
+  ansible.builtin.wait_for:
+    host: "{{ item }}"
+    port: 27018
+    delay: 10
+    timeout: 60
+  loop:
+    - "{{ groups['mongodb_shards'][0] }}"
+    - "{{ groups['mongodb_shards'][1] }}"
+  when: inventory_hostname == groups['mongodb_mongos'][0]
+
+- name: Check shard replica set status
+  ansible.builtin.shell: |
+    mongosh --host {{ item }}:27018 --eval "rs.status()" --quiet
+  register: shard_status_check
+  loop:
+    - "{{ groups['mongodb_shards'][0] }}"
+    - "{{ groups['mongodb_shards'][1] }}"
+  when: inventory_hostname == groups['mongodb_mongos'][0]
+  retries: 5
+  delay: 10
+  until: "'PRIMARY' in shard_status_check.stdout"
+
 - name: Add shards to MongoDB cluster (only on first mongos node)
   ansible.builtin.shell: |
     mongosh --host localhost:27017 --eval "
-    sh.addShard('nosql-node-1:27018');
-    sh.addShard('nosql-node-2:27018');
+    sh.addShard('nosql-node-1ReplSet/{{ hostvars[groups['mongodb_shards'][0]]['ansible_host'] }}:27018');
+    sh.addShard('nosql-node-2ReplSet/{{ hostvars[groups['mongodb_shards'][1]]['ansible_host'] }}:27018');
     sh.enableSharding('burst_a_flat');
     sh.shardCollection('burst_a_flat.sample_data_task_1', {array_task: 1});
     sh.shardCollection('burst_a_flat.sample_data_task_2', {array_task: 1});
@@ -73,6 +102,8 @@
   register: shard_add_result
   failed_when: shard_add_result.rc != 0 and "already exists" not in shard_add_result.stderr
   when: inventory_hostname == groups['mongodb_mongos'][0]
+  retries: 3
+  delay: 15
 
 - name: Debug shard addition result
   ansible.builtin.debug:

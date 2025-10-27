@@ -63,3 +63,22 @@
     port: 27018
     delay: 5
     timeout: 60
+
+- name: Initialize shard replica set
+  ansible.builtin.shell: |
+    mongosh --host localhost:27018 --eval "
+    rs.initiate({
+      _id: '{{ inventory_hostname }}ReplSet',
+      members: [
+        { _id: 0, host: '{{ ansible_host }}:27018' }
+      ]
+    });
+    "
+  args:
+    creates: /tmp/mongodb_shard_replset_initiated
+  register: shard_replset_init
+  failed_when: shard_replset_init.rc != 0 and "already initialized" not in shard_replset_init.stderr
+
+- name: Debug shard replica set initialization
+  ansible.builtin.debug:
+    var: shard_replset_init.stdout

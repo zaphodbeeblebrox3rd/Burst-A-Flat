@@ -180,6 +180,9 @@ db.burst_a_flat.sample_data_task_1.getShardDistribution()
 use burst_a_flat
 db.test_collection.insertOne({array_task: 1, data: "test1"})
 db.test_collection.insertOne({array_task: 2, data: "test2"})
+
+# Verify data is distributed across shards
+db.test_collection.find().forEach(printjson)
 ```
 
 ### Step 6: Run R Workload Demo
@@ -671,20 +674,40 @@ This guide provides a complete pathway for researchers to migrate from tradition
 ```
 ├── README.md
 ├── Vagrantfile
+├── config.yml
 ├── inventory/
-│   └── hosts
+│   ├── hosts
+│   └── group_vars/
+│       └── all/
+│           └── r_packages.yml
 ├── playbooks/
 │   ├── site.yml
-│   ├── slurm-controller.yml
-│   ├── slurm-compute.yml
-│   ├── nfs-server.yml
-│   ├── mariadb.yml
-│   └── mongodb.yml
+│   └── roles/
+│       ├── common/
+│       ├── mongodb_config/
+│       ├── mongodb_shard/
+│       ├── mongodb_mongos/
+│       ├── slurm_controller/
+│       ├── slurm_compute/
+│       ├── slurmdb/
+│       ├── nfs_server/
+│       ├── nfs_client/
+│       ├── mariadb_server/
+│       ├── munge/
+│       ├── network_config/
+│       ├── router/
+│       └── r_environment/
 ├── scripts/
 │   ├── r_workload_demo.sh
-│   └── generate_test_data.R
-└── data/
-    └── sample_data.Rdata
+│   ├── r_workload_demo.R
+│   ├── generate_test_data.R
+│   ├── generate_sample_data.R
+│   ├── test_cluster.sh
+│   ├── monitor_cluster.sh
+│   ├── cleanup.sh
+│   └── setup_host_r_environment.sh
+└── passwords/
+    └── munge.key.md5
 ```
 
 ## Troubleshooting
@@ -733,6 +756,41 @@ If you encounter errors like "The provider 'libvirt' that was requested to back 
 2. **Slurm Communication**: Verify Munge keys are synchronized
 3. **MongoDB Sharding**: Check config server and mongos router status
 4. **Data Distribution**: Verify shard status with `sh.status()` in mongosh
+
+#### MongoDB Sharding Troubleshooting
+
+**Issue**: Mongos router fails to add shards
+```bash
+# Check if shard services are running
+vagrant ssh nosql-node-1 -c "sudo systemctl status mongod"
+vagrant ssh nosql-node-2 -c "sudo systemctl status mongod"
+
+# Check mongos router status
+vagrant ssh nosql-node-1 -c "sudo systemctl status mongos"
+
+# Verify replica sets are initialized
+mongosh --host nosql-node-1:27018 --eval "rs.status()"
+mongosh --host nosql-node-2:27018 --eval "rs.status()"
+```
+
+**Issue**: R workload fails to connect to MongoDB
+```bash
+# Test MongoDB connectivity from compute nodes
+vagrant ssh compute-node-1 -c "mongosh --host nosql-node-1:27017 --eval 'db.runCommand({ping: 1})'"
+vagrant ssh compute-node-4 -c "mongosh --host nosql-node-2:27017 --eval 'db.runCommand({ping: 1})'"
+
+# Check if data exists in collections
+mongosh --host nosql-node-1:27017 --eval "use burst_a_flat; db.sample_data_task_1.count()"
+```
+
+**Issue**: Data not distributed across shards
+```bash
+# Check shard distribution
+mongosh --host nosql-node-1:27017 --eval "sh.status()"
+
+# Force rebalancing if needed
+mongosh --host nosql-node-1:27017 --eval "sh.enableBalancing('burst_a_flat.sample_data_task_1')"
+```
 
 
 ### Logs
