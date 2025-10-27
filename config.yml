@@ -76,7 +76,7 @@ vms:
     ip_network1: "192.168.50.16"
     memory: 1024
     cpus: 2
-    roles: ["nosql", "mongodb_primary"]
+    roles: ["nosql", "mongodb_shard"]
   
   compute-node-3:
     hostname: "compute-node-3"
@@ -97,4 +97,4 @@ vms:
     ip_network2: "192.168.60.12"
     memory: 1024
     cpus: 2
-    roles: ["nosql", "mongodb_replica"]
+    roles: ["nosql", "mongodb_shard"]

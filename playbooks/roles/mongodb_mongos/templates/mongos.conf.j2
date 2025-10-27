@@ -12,4 +12,4 @@ processManagement:
   timeZoneInfo: /usr/share/zoneinfo
 
 sharding:
-  configDB: {{ groups['mongodb_config'][0] }}:27019
+  configDB: configReplSet/{{ groups['mongodb_config'][0] }}:27019

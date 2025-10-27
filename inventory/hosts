@@ -39,12 +39,6 @@ compute-node-2
 [router]
 management-node
 
-[mongodb_primary]
-nosql-node-1
-
-[mongodb_replica]
-nosql-node-2
-
 [mongodb_config]
 controller-node
 

@@ -19,11 +19,11 @@
   vars:
     mongodb_ip: >-
       {%- if inventory_hostname in groups['network1'] -%}
-        {{ hostvars[groups['mongodb_primary'][0]]['ansible_host'] }}
+        {{ hostvars[groups['mongodb_shards'][0]]['ansible_host'] }}
       {%- elif inventory_hostname in groups['network2'] -%}
-        {{ hostvars[groups['mongodb_replica'][0]]['ansible_host'] }}
+        {{ hostvars[groups['mongodb_shards'][1]]['ansible_host'] }}
       {%- else -%}
-        {{ hostvars[groups['mongodb_primary'][0]]['ansible_host'] }}
+        {{ hostvars[groups['mongodb_shards'][0]]['ansible_host'] }}
       {%- endif -%}
 
 - name: Install all required packages

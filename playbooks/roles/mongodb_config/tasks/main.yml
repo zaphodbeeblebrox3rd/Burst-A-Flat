@@ -1,11 +1,32 @@
 ---
-- name: Install MongoDB config server
+- name: Add MongoDB GPG key
+  ansible.builtin.apt_key:
+    url: https://www.mongodb.org/static/pgp/server-6.0.asc
+    state: present
+
+- name: Install MongoDB repository
+  ansible.builtin.apt_repository:
+    repo: "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse"
+    state: present
+    update_cache: yes
+
+- name: Install MongoDB packages
   ansible.builtin.apt:
-    name: mongodb-mongosh
+    name:
+      - mongodb-org
+      - mongodb-org-server
+      - mongodb-org-mongos
+      - mongodb-org-tools
     state: present
     lock_timeout: 300
   retries: 3
   delay: 90
+
+- name: Stop existing MongoDB service (if running)
+  ansible.builtin.systemd:
+    name: mongod
+    state: stopped
+  failed_when: false
 
 - name: Create MongoDB config server directory
   ansible.builtin.file:
@@ -43,3 +64,23 @@
     port: 27019
     delay: 5
     timeout: 60
+
+- name: Initialize config server replica set
+  ansible.builtin.shell: |
+    mongosh --host localhost:27019 --eval "
+    rs.initiate({
+      _id: 'configReplSet',
+      configsvr: true,
+      members: [
+        { _id: 0, host: '{{ ansible_host }}:27019' }
+      ]
+    });
+    "
+  args:
+    creates: /tmp/mongodb_config_replset_initiated
+  register: config_replset_init
+  failed_when: config_replset_init.rc != 0 and "already initialized" not in config_replset_init.stderr
+
+- name: Debug config replica set initialization
+  ansible.builtin.debug:
+    var: config_replset_init.stdout

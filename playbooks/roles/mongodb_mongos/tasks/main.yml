@@ -1,11 +1,32 @@
 ---
-- name: Install MongoDB mongos router
+- name: Add MongoDB GPG key
+  ansible.builtin.apt_key:
+    url: https://www.mongodb.org/static/pgp/server-6.0.asc
+    state: present
+
+- name: Install MongoDB repository
+  ansible.builtin.apt_repository:
+    repo: "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse"
+    state: present
+    update_cache: yes
+
+- name: Install MongoDB packages
   ansible.builtin.apt:
-    name: mongodb-mongosh
+    name:
+      - mongodb-org
+      - mongodb-org-server
+      - mongodb-org-mongos
+      - mongodb-org-tools
     state: present
     lock_timeout: 300
   retries: 3
   delay: 90
+
+- name: Stop existing MongoDB service (if running)
+  ansible.builtin.systemd:
+    name: mongod
+    state: stopped
+  failed_when: false
 
 - name: Create MongoDB mongos configuration
   ansible.builtin.template:
@@ -36,10 +57,11 @@
     delay: 5
     timeout: 60
 
-- name: Add shards to MongoDB cluster
+- name: Add shards to MongoDB cluster (only on first mongos node)
   ansible.builtin.shell: |
     mongosh --host localhost:27017 --eval "
-    sh.addShard('{{ inventory_hostname }}:27018');
+    sh.addShard('nosql-node-1:27018');
+    sh.addShard('nosql-node-2:27018');
     sh.enableSharding('burst_a_flat');
     sh.shardCollection('burst_a_flat.sample_data_task_1', {array_task: 1});
     sh.shardCollection('burst_a_flat.sample_data_task_2', {array_task: 1});
@@ -50,6 +72,7 @@
     creates: /tmp/mongodb_shards_added
   register: shard_add_result
   failed_when: shard_add_result.rc != 0 and "already exists" not in shard_add_result.stderr
+  when: inventory_hostname == groups['mongodb_mongos'][0]
 
 - name: Debug shard addition result
   ansible.builtin.debug:

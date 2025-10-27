@@ -94,8 +94,7 @@
   hosts: mongodb_shards
   become: yes
   roles:
-    - role: mongodb_primary
-    - role: mongodb_replica
+    - role: mongodb_shard
 
 - name: Configure MongoDB Mongos Routers
   hosts: mongodb_mongos
@@ -228,7 +227,7 @@
         owner: vagrant
         group: vagrant
         mode: '0755'
-      when: inventory_hostname in groups['network2'] and inventory_hostname not in groups['mongodb_replica']
+      when: inventory_hostname in groups['network2'] and inventory_hostname in groups['slurm_computes']
 
     - name: Copy R workload demo sbatch script to NFS share
       ansible.builtin.copy:
@@ -246,7 +245,7 @@
         owner: vagrant
         group: vagrant
         mode: '0644'
-      when: inventory_hostname in groups['network2'] and inventory_hostname not in groups['mongodb_replica']
+      when: inventory_hostname in groups['network2'] and inventory_hostname in groups['slurm_computes']
 
     - name: Copy R workload demo R script to NFS share
       ansible.builtin.copy:

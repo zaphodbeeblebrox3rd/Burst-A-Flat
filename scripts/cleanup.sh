@@ -37,7 +37,7 @@ echo "Cleaning up temporary files..."
 rm -f /tmp/test_job.sh
 rm -f /tmp/munge_key
 rm -f /tmp/mongodb_initialized
-rm -f /tmp/mongodb_replica_added
+rm -f /tmp/mongodb_shard_added
 rm -f /tmp/r_packages_installed
 echo "✅ Temporary files cleaned"
 echo ""
