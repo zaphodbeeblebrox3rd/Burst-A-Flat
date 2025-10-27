@@ -172,7 +172,7 @@
           {%- endif -%}
       when: slurm_services | length > 0
 
-    - name: Create shared home directory structure
+    - name: Create home directory structure for remote nodes without NFS
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
@@ -181,31 +181,70 @@
         mode: '0755'
       loop:
         - /home/vagrant/shared
-        - /home/vagrant/shared/data
         - /home/vagrant/shared/scripts
         - /home/vagrant/shared/results
-      when: inventory_hostname in groups['slurm_login']
+      when: inventory_hostname in groups['network2']
 
-
-    - name: Copy sample data generation script
-      ansible.builtin.copy:
-        src: "{{ playbook_dir }}/../scripts/generate_sample_data.R"
-        dest: /home/vagrant/shared/scripts/generate_sample_data.R
+    - name: Create shared home directory structure for NFS
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
         owner: vagrant
         group: vagrant
         mode: '0755'
-      when: inventory_hostname in groups['slurm_login']
+      loop:
+        - /home/shared
+        - /home/shared/data
+        - /home/shared/scripts
+        - /home/shared/results
+      when: inventory_hostname in groups['slurm_controllers']
 
-    - name: Copy R workload demo script
+    - name: Copy sample data generation script to NFS share
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../scripts/generate_sample_data.R"
+        dest: /home/shared/scripts/generate_sample_data.R
+        owner: vagrant
+        group: vagrant
+        mode: '0755'
+      when: inventory_hostname in groups['slurm_controllers']
+
+    - name: Copy R workload demo sbatch script to remote nodes without NFS
       ansible.builtin.copy:
         src: "{{ playbook_dir }}/../scripts/r_workload_demo.sh"
         dest: /home/vagrant/shared/scripts/r_workload_demo.sh
         owner: vagrant
         group: vagrant
         mode: '0755'
-      when: inventory_hostname in groups['slurm_login']
+      when: inventory_hostname in groups['network2']
 
-    - name: Generate sample data
+    - name: Copy R workload demo sbatch script to NFS share
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../scripts/r_workload_demo.sh"
+        dest: /home/shared/scripts/r_workload_demo.sh
+        owner: vagrant
+        group: vagrant
+        mode: '0755'
+      when: inventory_hostname in groups['slurm_controllers']
+
+    - name: Copy R workload demo R script to remote nodes without NFS
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../scripts/r_workload_demo.R"
+        dest: /home/vagrant/shared/scripts/r_workload_demo.R
+        owner: vagrant
+        group: vagrant
+        mode: '0644'
+      when: inventory_hostname in groups['network2'] and inventory_hostname not in groups['mongodb_replica']
+
+    - name: Copy R workload demo R script to NFS share
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../scripts/r_workload_demo.R"
+        dest: /home/shared/scripts/r_workload_demo.R
+        owner: vagrant
+        group: vagrant
+        mode: '0644'
+      when: inventory_hostname in groups['slurm_controllers']
+
+    - name: Generate sample data on NFS share
       ansible.builtin.shell: |
         cd /home/vagrant/shared/scripts
         Rscript generate_sample_data.R

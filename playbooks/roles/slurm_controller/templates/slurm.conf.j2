@@ -1,7 +1,9 @@
-# Slurm configuration for controller
+# Slurm configuration file
 ClusterName={{ cluster_name }}
 ControlMachine={{ groups['slurm_controllers'][0] }}
 ControlAddr={{ hostvars[groups['slurm_controllers'][0]]['ansible_host'] }}
+
+# SlurmDB configuration
 # SlurmUser=slurm  # Commented out - run as root for proper authentication
 SlurmdUser=root
 SlurmctldPort=6817
@@ -10,33 +12,43 @@ StateSaveLocation=/var/spool/slurm/ctld
 SlurmdSpoolDir=/var/spool/slurm/d
 SwitchType=switch/none
 MpiDefault=none
-SlurmctldPidFile=/run/slurmctld.pid
-SlurmdPidFile=/run/slurmd.pid
+SlurmctldTimeout=300
+SlurmdTimeout=300
+InactiveLimit=0
+MinJobAge=300
+KillWait=30
+Waittime=0
+
+# Job accounting
+SchedulerType=sched/builtin
+SchedulerParameters=bf_continue
+SelectType=select/linear
+
+# Task and process tracking - using basic process tracking instead of cgroup
 ProctrackType=proctrack/linuxproc
 TaskPlugin=task/none
-SchedulerType=sched/backfill
-SelectType=select/linear
-SlurmctldLogFile=/var/log/slurm/slurmctld.log
-SlurmdLogFile=/var/log/slurm/slurmd.log
-SlurmctldDebug=info
-SlurmdDebug=info
-SlurmctldParameters=enable_configless
-SlurmdParameters=enable_configless
-# SlurmDB configuration - controller connects to slurmdb-node
-AccountingStorageType=accounting_storage/slurmdbd
-AccountingStorageHost={{ groups['slurmdb'][0] }}
-AccountingStoragePort=6819
 
-# Enable job accounting gather
-JobAcctGatherType=jobacct_gather/linux
-JobAcctGatherFrequency=30
+# Node definitions
+{% for host in groups['slurm_computes'] %}
+NodeName={{ hostvars[host]['inventory_hostname'] }} CPUs=4 Sockets=4 CoresPerSocket=1 ThreadsPerCore=1 RealMemory=1024 State=IDLE
+{% endfor %}
 
 # Partition definitions
 PartitionName=compute Nodes=compute-node-[1-4] Default=YES MaxTime=INFINITE State=UP
 PartitionName=network1 Nodes=compute-node-[1-2] MaxTime=INFINITE State=UP
 PartitionName=network2 Nodes=compute-node-[3-4] MaxTime=INFINITE State=UP
 
-# Node definitions
-{% for host in groups['slurm_computes'] %}
-NodeName={{ host }} CPUs=4 Sockets=4 CoresPerSocket=1 ThreadsPerCore=1 RealMemory=1024 State=IDLE
-{% endfor %}
+# Prolog and Epilog
+PrologFlags=Alloc
+EpilogMsgTime=30
+
+# Logging
+SlurmctldLogFile=/var/log/slurm/slurmctld.log
+SlurmdLogFile=/var/log/slurm/slurmd.log
+
+# Accounting
+AccountingStorageType=accounting_storage/slurmdbd
+AccountingStorageHost={{ groups['slurmdb'][0] }}
+AccountingStoragePort=6819
+JobAcctGatherType=jobacct_gather/linux
+JobAcctGatherFrequency=30
