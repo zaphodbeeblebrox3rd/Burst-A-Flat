@@ -57,8 +57,14 @@ demonstrate_nosql_solution <- function() {
     
     # Connect to MongoDB with array task-specific collection
     array_task_id <- as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID', '1'))
+    
+    # Determine network ID for composite shard key
+    network_id <- ifelse(grepl('compute-node-[3-4]', node_info), 2, 1)
+    composite_shard_key <- paste0(network_id, "_", array_task_id)
+    
     collection_name <- paste0('sample_data_task_', array_task_id)
     cat('Using MongoDB collection:', collection_name, '\n')
+    cat('Composite shard key:', composite_shard_key, '\n')
     
     con <- mongo(collection = collection_name, db = 'burst_a_flat', url = paste0('mongodb://', mongo_host))
     
@@ -117,13 +123,28 @@ generate_sample_data <- function() {
   cat('Array Task ID:', array_task_id, '\n')
   cat('Using seed:', 123 + array_task_id, '\n')
   
+  # Determine network ID based on node
+  node_info <- if (nchar(Sys.getenv('SLURM_JOB_NODELIST')) > 0) {
+    Sys.getenv('SLURM_JOB_NODELIST')
+  } else {
+    Sys.info()['nodename']
+  }
+  
+  network_id <- ifelse(grepl('compute-node-[3-4]', node_info), 2, 1)
+  composite_shard_key <- paste0(network_id, "_", array_task_id)
+  
+  cat('Network ID:', network_id, '\n')
+  cat('Composite shard key:', composite_shard_key, '\n')
+  
   # Create sample dataset with task-specific data
   sample_data <- data.frame(
     id = 1:1000,
     value = rnorm(1000, mean = 100 + array_task_id * 10, sd = 15),  # Different mean per task
     category = sample(c('A', 'B', 'C'), 1000, replace = TRUE),
     timestamp = Sys.time() + runif(1000, -3600, 3600),
-    array_task = rep(array_task_id, 1000)  # Track which array task generated this data
+    array_task = rep(array_task_id, 1000),  # Track which array task generated this data
+    network_id = rep(network_id, 1000),     # Track which network generated this data
+    shard_key = rep(composite_shard_key, 1000)  # Composite shard key for MongoDB
   )
   
   # Save to NFS (if accessible)
@@ -179,13 +200,28 @@ generate_sample_data_cloud_only <- function() {
   cat('Array Task ID:', array_task_id, '\n')
   cat('Using seed:', 123 + array_task_id, '\n')
   
+  # Determine network ID based on node
+  node_info <- if (nchar(Sys.getenv('SLURM_JOB_NODELIST')) > 0) {
+    Sys.getenv('SLURM_JOB_NODELIST')
+  } else {
+    Sys.info()['nodename']
+  }
+  
+  network_id <- ifelse(grepl('compute-node-[3-4]', node_info), 2, 1)
+  composite_shard_key <- paste0(network_id, "_", array_task_id)
+  
+  cat('Network ID:', network_id, '\n')
+  cat('Composite shard key:', composite_shard_key, '\n')
+  
   # Create sample dataset with task-specific data
   sample_data <- data.frame(
     id = 1:1000,
     value = rnorm(1000, mean = 100 + array_task_id * 10, sd = 15),  # Different mean per task
     category = sample(c('A', 'B', 'C'), 1000, replace = TRUE),
     timestamp = Sys.time() + runif(1000, -3600, 3600),
-    array_task = rep(array_task_id, 1000)  # Track which array task generated this data
+    array_task = rep(array_task_id, 1000),  # Track which array task generated this data
+    network_id = rep(network_id, 1000),     # Track which network generated this data
+    shard_key = rep(composite_shard_key, 1000)  # Composite shard key for MongoDB
   )
   
   # Save to MongoDB only (skip NFS on cloud nodes)

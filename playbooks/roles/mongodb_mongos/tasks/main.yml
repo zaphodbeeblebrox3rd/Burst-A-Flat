@@ -92,10 +92,10 @@
     sh.addShard('nosql-node-1ReplSet/{{ hostvars[groups['mongodb_shards'][0]]['ansible_host'] }}:27018');
     sh.addShard('nosql-node-2ReplSet/{{ hostvars[groups['mongodb_shards'][1]]['ansible_host'] }}:27018');
     sh.enableSharding('burst_a_flat');
-    sh.shardCollection('burst_a_flat.sample_data_task_1', {array_task: 1});
-    sh.shardCollection('burst_a_flat.sample_data_task_2', {array_task: 1});
-    sh.shardCollection('burst_a_flat.sample_data_task_3', {array_task: 1});
-    sh.shardCollection('burst_a_flat.sample_data_task_4', {array_task: 1});
+    sh.shardCollection('burst_a_flat.sample_data_task_1', {network_id: 1, array_task: 1});
+    sh.shardCollection('burst_a_flat.sample_data_task_2', {network_id: 1, array_task: 1});
+    sh.shardCollection('burst_a_flat.sample_data_task_3', {network_id: 1, array_task: 1});
+    sh.shardCollection('burst_a_flat.sample_data_task_4', {network_id: 1, array_task: 1});
     "
   args:
     creates: /tmp/mongodb_shards_added

@@ -2,7 +2,7 @@
 # vi: set ft=ruby :
 # Generated Vagrantfile for Burst-A-Flat
 # Provider: kvm
-# Generated on: Wed Oct  1 07:23:55 PM CDT 2025
+# Generated on: Mon Oct 27 09:10:43 AM CDT 2025
 
 Vagrant.configure("2") do |config|
   # Global configuration
@@ -25,6 +25,7 @@ Vagrant.configure("2") do |config|
   config.vm.define "login-node" do |login_node|
     login_node.vm.hostname = "login-node"
     login_node.vm.network "private_network", ip: "192.168.50.10", libvirt__network_name: "onprem-network"
+    login_node.vm.network "private_network", ip: "192.168.60.11", libvirt__network_name: "cloud-network"
     login_node.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
@@ -86,6 +87,7 @@ Vagrant.configure("2") do |config|
   config.vm.define "controller-node" do |controller_node|
     controller_node.vm.hostname = "controller-node"
     controller_node.vm.network "private_network", ip: "192.168.50.12", libvirt__network_name: "onprem-network"
+    controller_node.vm.network "private_network", ip: "192.168.60.16", libvirt__network_name: "cloud-network"
     controller_node.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
@@ -118,6 +120,7 @@ Vagrant.configure("2") do |config|
   config.vm.define "slurmdb-node" do |slurmdb_node|
     slurmdb_node.vm.hostname = "slurmdb-node"
     slurmdb_node.vm.network "private_network", ip: "192.168.50.13", libvirt__network_name: "onprem-network"
+    slurmdb_node.vm.network "private_network", ip: "192.168.60.16", libvirt__network_name: "cloud-network"
     slurmdb_node.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
@@ -148,6 +151,7 @@ Vagrant.configure("2") do |config|
   config.vm.define "compute-node-1" do |compute_node_1|
     compute_node_1.vm.hostname = "compute-node-1"
     compute_node_1.vm.network "private_network", ip: "192.168.50.14", libvirt__network_name: "onprem-network"
+    compute_node_1.vm.network "private_network", ip: "192.168.60.16", libvirt__network_name: "cloud-network"
     compute_node_1.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
@@ -178,6 +182,7 @@ Vagrant.configure("2") do |config|
   config.vm.define "compute-node-2" do |compute_node_2|
     compute_node_2.vm.hostname = "compute-node-2"
     compute_node_2.vm.network "private_network", ip: "192.168.50.15", libvirt__network_name: "onprem-network"
+    compute_node_2.vm.network "private_network", ip: "192.168.60.16", libvirt__network_name: "cloud-network"
     compute_node_2.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh
@@ -208,6 +213,7 @@ Vagrant.configure("2") do |config|
   config.vm.define "nosql-node-1" do |nosql_node_1|
     nosql_node_1.vm.hostname = "nosql-node-1"
     nosql_node_1.vm.network "private_network", ip: "192.168.50.16", libvirt__network_name: "onprem-network"
+    nosql_node_1.vm.network "private_network", ip: "192.168.60.16", libvirt__network_name: "cloud-network"
     nosql_node_1.vm.provision "shell", inline: <<-SHELL
       # Ensure .ssh directory exists
       mkdir -p /home/vagrant/.ssh

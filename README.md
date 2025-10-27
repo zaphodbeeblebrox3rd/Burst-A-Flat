@@ -115,19 +115,24 @@ This project implements MongoDB sharding to provide true multi-master write capa
 ### Benefits
 
 ✅ **Multi-Master Writes**: Both networks can write simultaneously  
-✅ **Automatic Data Distribution**: Data sharded by `array_task` field  
+✅ **Geographic Data Locality**: Data sharded by composite key `{network_id, array_task}`  
 ✅ **Transparent Access**: Applications connect to mongos, not individual shards  
 ✅ **High Availability**: Each shard can be replicated independently  
 ✅ **Scalable**: Easy to add more shards/networks  
+✅ **Network-Aware Distribution**: Data stays close to its point of origin  
 
 ### Data Flow
 
 ```
 R Application → Mongos Router → Config Server → Appropriate Shard
      ↓              ↓              ↓              ↓
-compute-node-1 → nosql-node-1 → controller-node → nosql-node-1:27018
-compute-node-4 → nosql-node-2 → controller-node → nosql-node-2:27018
+compute-node-1 → nosql-node-1 → controller-node → nosql-node-1:27018 (network_id=1)
+compute-node-4 → nosql-node-2 → controller-node → nosql-node-2:27018 (network_id=2)
 ```
+
+**Composite Shard Key**: `{network_id: 1, array_task: 1}` ensures data locality:
+- **Network 1 data** (compute-node-1/2) → **nosql-node-1 shard**
+- **Network 2 data** (compute-node-3/4) → **nosql-node-2 shard**
 
 ## Prerequisites
 
@@ -236,7 +241,7 @@ The included R workload demonstrates:
 1. **Traditional Failure**: Attempts to read `.Rdata` files from NFS (fails on Network 2)
 2. **Cloud Burst Success**: Uses MongoDB sharding to access data across networks
 3. **Array Job Processing**: Demonstrates parallel processing across all compute nodes
-4. **Automatic Data Distribution**: Data is automatically sharded based on array task ID
+4. **Geographic Data Locality**: Data is automatically sharded using composite key `{network_id, array_task}` to keep data close to its point of origin
 
 ## Step-by-Step Guide: Converting R Jobs to Use NoSQL Databases
 
