@@ -2,7 +2,7 @@
 ClusterName={{ cluster_name }}
 ControlMachine={{ groups['slurm_controllers'][0] }}
 ControlAddr={{ hostvars[groups['slurm_controllers'][0]]['ansible_host'] }}
-SlurmUser=slurm
+# SlurmUser=slurm  # Commented out - run as root for proper authentication
 SlurmdUser=root
 SlurmctldPort=6817
 SlurmdPort=6818
