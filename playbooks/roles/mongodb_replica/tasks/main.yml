@@ -118,3 +118,56 @@
   ansible.builtin.file:
     path: /tmp/mongodb_replica_added
     state: touch
+
+- name: Check replica set status
+  ansible.builtin.shell: |
+    mongosh --eval "rs.status()"
+  register: replica_status
+  failed_when: false
+
+- name: Debug replica set status
+  ansible.builtin.debug:
+    var: replica_status.stdout
+
+- name: Test write capability on replica
+  ansible.builtin.shell: |
+    mongosh --eval "
+    db = db.getSiblingDB('test_write');
+    result = db.test_collection.insertOne({test: 'write_test', timestamp: new Date()});
+    print('Write test result:', result);
+    count = db.test_collection.countDocuments();
+    print('Document count:', count);
+    "
+  register: write_test
+  failed_when: false
+
+- name: Debug write test results
+  ansible.builtin.debug:
+    var: write_test.stdout
+
+- name: Check replica set configuration
+  ansible.builtin.shell: |
+    mongosh --eval "rs.conf()"
+  register: replica_config
+  failed_when: false
+
+- name: Debug replica set configuration
+  ansible.builtin.debug:
+    var: replica_config.stdout
+
+- name: Force replica to become primary (if needed)
+  ansible.builtin.shell: |
+    mongosh --eval "
+    cfg = rs.conf();
+    cfg.members[1].priority = 2;
+    cfg.members[0].priority = 1;
+    rs.reconfig(cfg, {force: true});
+    "
+  register: force_primary
+  failed_when: false
+  when: replica_status.stdout is defined and "SECONDARY" in replica_status.stdout
+
+- name: Debug force primary result
+  ansible.builtin.debug:
+    var: force_primary.stdout
+  when: force_primary is defined

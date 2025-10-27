@@ -37,16 +37,16 @@ demonstrate_nosql_solution <- function() {
     
     cat('Node information:', node_info, '\n')
     
-    # Determine MongoDB host based on network
-    if (grepl('compute-node-[3-4]', node_info)) {
-      # Network 2 - use replica
-      mongo_host <- 'nosql-node-2:27017'
-      cat('Using Network 2 (Cloud) MongoDB replica\n')
-    } else {
-      # Network 1 - use primary
-      mongo_host <- 'nosql-node-1:27017'
-      cat('Using Network 1 (On-premises) MongoDB primary\n')
-    }
+           # Determine MongoDB host based on network
+           if (grepl('compute-node-[3-4]', node_info)) {
+             # Network 2 - use mongos on nosql-node-2
+             mongo_host <- 'nosql-node-2:27017  # mongos router'
+             cat('Using Network 2 (Cloud) MongoDB mongos router\n')
+           } else {
+             # Network 1 - use mongos on nosql-node-1
+             mongo_host <- 'nosql-node-1:27017  # mongos router'
+             cat('Using Network 1 (On-premises) MongoDB mongos router\n')
+           }
     
     cat('Connecting to MongoDB at:', mongo_host, '\n')
     
@@ -143,9 +143,64 @@ generate_sample_data <- function() {
     }
     
     if (grepl('compute-node-[3-4]', node_info)) {
-      mongo_host <- 'nosql-node-2:27017'
+      mongo_host <- 'nosql-node-2:27017  # mongos router'
     } else {
-      mongo_host <- 'nosql-node-1:27017'
+      mongo_host <- 'nosql-node-1:27017  # mongos router'
+    }
+    
+    cat('Saving to MongoDB at:', mongo_host, '\n')
+    array_task_id <- as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID', '1'))
+    collection_name <- paste0('sample_data_task_', array_task_id)
+    con <- mongo(collection = collection_name, db = 'burst_a_flat', url = paste0('mongodb://', mongo_host))
+    con$insert(sample_data)
+    con$disconnect()
+    cat('Data saved to MongoDB collection:', collection_name, 'at:', mongo_host, '\n')
+  }, error = function(e) {
+    tryCatch({
+      cat('ERROR: Failed to save to MongoDB:', e$message, '\n')
+      cat('Error details:', as.character(e), '\n')
+    }, error = function(e2) {
+      cat('ERROR: Failed to save to MongoDB (error in error handling)\n')
+      cat('Original error type:', class(e), '\n')
+    })
+  })
+  
+  return(sample_data)
+}
+
+# Function to generate sample data for cloud nodes (MongoDB only)
+generate_sample_data_cloud_only <- function() {
+  cat('\n=== Generating Sample Data (Cloud - MongoDB Only) ===\n')
+  
+  # Create sample dataset with array task-specific seed
+  array_task_id <- as.numeric(Sys.getenv('SLURM_ARRAY_TASK_ID', '1'))
+  set.seed(123 + array_task_id)  # Different seed for each array task
+  
+  cat('Array Task ID:', array_task_id, '\n')
+  cat('Using seed:', 123 + array_task_id, '\n')
+  
+  # Create sample dataset with task-specific data
+  sample_data <- data.frame(
+    id = 1:1000,
+    value = rnorm(1000, mean = 100 + array_task_id * 10, sd = 15),  # Different mean per task
+    category = sample(c('A', 'B', 'C'), 1000, replace = TRUE),
+    timestamp = Sys.time() + runif(1000, -3600, 3600),
+    array_task = rep(array_task_id, 1000)  # Track which array task generated this data
+  )
+  
+  # Save to MongoDB only (skip NFS on cloud nodes)
+  tryCatch({
+    # Use same node detection logic as in demonstrate_nosql_solution
+    node_info <- if (nchar(Sys.getenv('SLURM_JOB_NODELIST')) > 0) {
+      Sys.getenv('SLURM_JOB_NODELIST')
+    } else {
+      Sys.info()['nodename']
+    }
+    
+    if (grepl('compute-node-[3-4]', node_info)) {
+      mongo_host <- 'nosql-node-2:27017  # mongos router'
+    } else {
+      mongo_host <- 'nosql-node-1:27017  # mongos router'
     }
     
     cat('Saving to MongoDB at:', mongo_host, '\n')
@@ -181,8 +236,19 @@ node_info <- if (nchar(Sys.getenv('SLURM_JOB_NODELIST')) > 0) {
 cat('Node:', node_info, '\n')
 cat('Network:', ifelse(grepl('compute-node-[3-4]', node_info), 'Network 2 (Cloud)', 'Network 1 (On-Premises)'), '\n\n')
 
-# Generate sample data first
-sample_data <- generate_sample_data()
+# Generate sample data first (skip on network2 nodes)
+node_info <- if (nchar(Sys.getenv('SLURM_JOB_NODELIST')) > 0) {
+  Sys.getenv('SLURM_JOB_NODELIST')
+} else {
+  Sys.info()['nodename']
+}
+
+if (grepl('compute-node-[3-4]', node_info)) {
+  cat('Generating sample data on Network 2 (Cloud) nodes - MongoDB only\n')
+  sample_data <- generate_sample_data_cloud_only()
+} else {
+  sample_data <- generate_sample_data()
+}
 
 # Try traditional storage access
 traditional_success <- demonstrate_traditional_failure()

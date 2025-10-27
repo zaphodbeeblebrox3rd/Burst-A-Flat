@@ -45,6 +45,17 @@ nosql-node-1
 [mongodb_replica]
 nosql-node-2
 
+[mongodb_config]
+controller-node
+
+[mongodb_mongos]
+nosql-node-1
+nosql-node-2
+
+[mongodb_shards]
+nosql-node-1
+nosql-node-2
+
 [all:vars]
 ansible_user=vagrant
 # Try user's SSH key first, fall back to Vagrant key if needed

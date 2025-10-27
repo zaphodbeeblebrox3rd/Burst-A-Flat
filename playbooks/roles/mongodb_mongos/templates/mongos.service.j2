@@ -1,0 +1,16 @@
+[Unit]
+Description=MongoDB Mongos Router
+After=network.target
+
+[Service]
+Type=simple
+User=mongodb
+Group=mongodb
+ExecStart=/usr/bin/mongos --config /etc/mongos.conf
+PIDFile=/var/run/mongodb/mongos.pid
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=60
+
+[Install]
+WantedBy=multi-user.target

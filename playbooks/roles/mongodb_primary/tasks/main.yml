@@ -102,6 +102,24 @@
   ansible.builtin.debug:
     var: mongodb_init.stdout
 
+- name: Configure replica set for multi-master access
+  ansible.builtin.shell: |
+    mongosh --eval "
+    cfg = rs.conf();
+    cfg.members[0].priority = 1;
+    cfg.members[0].votes = 1;
+    if (cfg.members.length > 1) {
+      cfg.members[1].priority = 1;
+      cfg.members[1].votes = 1;
+    }
+    cfg.settings = { heartbeatTimeoutSecs: 10, electionTimeoutMillis: 10000 };
+    rs.reconfig(cfg, {force: true});
+    "
+  args:
+    creates: /tmp/mongodb_multimaster_configured
+  register: mongodb_multimaster_config
+  failed_when: mongodb_multimaster_config.rc != 0 and "not yet propagated" not in mongodb_multimaster_config.stderr
+
 - name: Wait for replica set to be ready
   ansible.builtin.wait_for:
     port: 27017

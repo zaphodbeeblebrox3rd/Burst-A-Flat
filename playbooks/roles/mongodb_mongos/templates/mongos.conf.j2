@@ -1,0 +1,15 @@
+# MongoDB Mongos Router configuration
+systemLog:
+  destination: file
+  logAppend: true
+  path: /var/log/mongodb/mongos.log
+
+net:
+  port: 27017
+  bindIp: 0.0.0.0
+
+processManagement:
+  timeZoneInfo: /usr/share/zoneinfo
+
+sharding:
+  configDB: {{ groups['mongodb_config'][0] }}:27019

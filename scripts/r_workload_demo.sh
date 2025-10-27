@@ -19,14 +19,6 @@ echo "Array Task ID: $SLURM_ARRAY_TASK_ID"
 echo "Node: $SLURM_JOB_NODELIST"
 echo "Date: $(date)"
 
-# Create results directory if it doesn't exist
-mkdir -p /home/vagrant/shared/results
-mkdir -p /home/vagrant/shared/data
-
-# Set proper permissions
-chmod 755 /home/vagrant/shared/results
-chmod 755 /home/vagrant/shared/data
-
 # Debug information
 echo "=== Debug Information ==="
 echo "Current user: $(whoami)"

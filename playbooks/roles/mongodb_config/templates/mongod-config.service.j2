@@ -1,0 +1,16 @@
+[Unit]
+Description=MongoDB Config Server
+After=network.target
+
+[Service]
+Type=simple
+User=mongodb
+Group=mongodb
+ExecStart=/usr/bin/mongod --config /etc/mongod-config.conf
+PIDFile=/var/run/mongodb/mongod-config.pid
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=60
+
+[Install]
+WantedBy=multi-user.target

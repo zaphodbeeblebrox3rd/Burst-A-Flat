@@ -30,14 +30,14 @@ In summary, this project provides a simulation of a workload built to scale from
 ### Network 1 (On-Premises)
 - **Login Node**: User access point
 - **Management Node**: Cluster administration
-- **Controller Node**: Slurm controller + NFS server
+- **Controller Node**: Slurm controller + NFS server + MongoDB config server
 - **SlurmDB Node**: MariaDB for Slurm accounting
 - **Compute Nodes**: 2 cluster compute nodes
-- **NoSQL Node**: MongoDB primary instance
+- **NoSQL Node**: MongoDB shard + mongos router
 
 ### Network 2 (Cloud Simulation)
 - **Compute Nodes**: Additional compute capacity
-- **NoSQL Node**: MongoDB replica for data synchronization
+- **NoSQL Node**: MongoDB shard + mongos router
 
 ## Architecture Diagram
 
@@ -46,17 +46,17 @@ graph TB
     subgraph "Network 1 - On-Premises (192.168.50.0/24)"
         LN[Login Node<br/>192.168.50.10]
         MN[Management Node<br/>192.168.50.11]
-        CN[Controller Node<br/>192.168.50.12<br/>Slurm Controller + NFS]
+        CN[Controller Node<br/>192.168.50.12<br/>Slurm Controller + NFS<br/>MongoDB Config Server]
         SN[SlurmDB Node<br/>192.168.50.13<br/>MariaDB]
         C1[Compute Node 1<br/>192.168.50.14]
         C2[Compute Node 2<br/>192.168.50.15]
-        N1[NoSQL Node 1<br/>192.168.50.16<br/>MongoDB Primary]
+        N1[NoSQL Node 1<br/>192.168.50.16<br/>MongoDB Shard + Mongos]
     end
     
     subgraph "Network 2 - Cloud Simulation (192.168.60.0/24)"
         C3[Compute Node 3<br/>192.168.60.16]
         C4[Compute Node 4<br/>192.168.60.17]
-        N2[NoSQL Node 2<br/>192.168.60.12<br/>MongoDB Replica]
+        N2[NoSQL Node 2<br/>192.168.60.12<br/>MongoDB Shard + Mongos]
     end
     
     subgraph "WAN Connection"
@@ -74,8 +74,8 @@ graph TB
     C2 --> CN
     
     %% WAN connection
-    N1 -.->|MongoDB Replication| WAN
-    WAN -.->|MongoDB Replication| N2
+    N1 -.->|MongoDB Sharding| WAN
+    WAN -.->|MongoDB Sharding| N2
     
     %% Network 2 connections
     C3 --> N2
@@ -98,9 +98,36 @@ graph TB
 ## Key Features
 
 - **NFS Shared Storage**: All Network 1 nodes mount `/home` from controller
-- **NoSQL Database**: MongoDB replication between networks for cloud burst scenarios
+- **MongoDB Sharding**: Distributed database with automatic data partitioning across networks
 - **Slurm Job Scheduler**: Distributed job management across both networks
-- **R Workload Demo**: Demonstrates failure with traditional storage and success with NoSQL
+- **R Workload Demo**: Demonstrates failure with traditional storage and success with NoSQL sharding
+
+## MongoDB Sharding Architecture
+
+This project implements MongoDB sharding to provide true multi-master write capability across both networks:
+
+### Components
+
+- **Config Server** (controller-node:27019): Stores shard metadata and routing information
+- **Mongos Routers** (nosql-node-1:27017, nosql-node-2:27017): Route queries to appropriate shards
+- **Shards** (nosql-node-1:27018, nosql-node-2:27018): Store actual data
+
+### Benefits
+
+✅ **Multi-Master Writes**: Both networks can write simultaneously  
+✅ **Automatic Data Distribution**: Data sharded by `array_task` field  
+✅ **Transparent Access**: Applications connect to mongos, not individual shards  
+✅ **High Availability**: Each shard can be replicated independently  
+✅ **Scalable**: Easy to add more shards/networks  
+
+### Data Flow
+
+```
+R Application → Mongos Router → Config Server → Appropriate Shard
+     ↓              ↓              ↓              ↓
+compute-node-1 → nosql-node-1 → controller-node → nosql-node-1:27018
+compute-node-4 → nosql-node-2 → controller-node → nosql-node-2:27018
+```
 
 ## Prerequisites
 
@@ -138,10 +165,30 @@ vagrant ssh login-node
 sinfo
 ```
 
-### Step 5: Run R Workload Demo
+### Step 5: Verify MongoDB Sharding
 ```bash
-# This will demonstrate the cloud burst scenario
+# Connect to mongos router
+mongosh --host nosql-node-1:27017
+
+# Check shard status
+sh.status()
+
+# Check sharded collections
+db.burst_a_flat.sample_data_task_1.getShardDistribution()
+
+# Test write to different shards
+use burst_a_flat
+db.test_collection.insertOne({array_task: 1, data: "test1"})
+db.test_collection.insertOne({array_task: 2, data: "test2"})
+```
+
+### Step 6: Run R Workload Demo
+```bash
+# This will demonstrate the cloud burst scenario with sharding
 sbatch ~/shared/scripts/r_workload_demo.sh
+
+# Check results
+ls -la ~/shared/results/
 ```
 
 ## KVM/libvirt Benefits
@@ -184,7 +231,9 @@ squeue
 
 The included R workload demonstrates:
 1. **Traditional Failure**: Attempts to read `.Rdata` files from NFS (fails on Network 2)
-2. **Cloud Burst Success**: Uses MongoDB to access data across networks
+2. **Cloud Burst Success**: Uses MongoDB sharding to access data across networks
+3. **Array Job Processing**: Demonstrates parallel processing across all compute nodes
+4. **Automatic Data Distribution**: Data is automatically sharded based on array task ID
 
 ## Step-by-Step Guide: Converting R Jobs to Use NoSQL Databases
 
@@ -252,9 +301,9 @@ load("data/experiment_001.Rdata")
 #### After: NoSQL Database
 ```r
 # NEW APPROACH - MongoDB
-# Connect to database
+# Connect to MongoDB sharded cluster
 con <- mongo(collection = "experiments", db = "research_db", 
-             url = "mongodb://mongodb-cluster:27017")
+             url = "mongodb://nosql-node-1:27017")
 
 # Save data to database
 con$insert(my_data)
@@ -283,7 +332,7 @@ save(results, file = "results/experiment_001_results.Rdata")
 ```r
 # Connect to MongoDB
 con <- mongo(collection = "experiments", db = "research_db", 
-             url = "mongodb://mongodb-cluster:27017")
+             url = "mongodb://nosql-node-1:27017")
 
 # Load experimental data from database
 my_data <- con$find('{"experiment_id": "001"}')
@@ -293,7 +342,7 @@ results <- process_data(my_data)
 
 # Save results to database
 results_con <- mongo(collection = "results", db = "research_db", 
-                     url = "mongodb://mongodb-cluster:27017")
+                     url = "mongodb://nosql-node-1:27017")
 results_con$insert(results)
 ```
 
@@ -314,7 +363,7 @@ hourly_data <- sensor_data %>%
 ```r
 # Connect to MongoDB
 con <- mongo(collection = "sensor_data", db = "research_db", 
-             url = "mongodb://mongodb-cluster:27017")
+             url = "mongodb://nosql-node-1:27017")
 
 # Load time series data from database
 sensor_data <- con$find('{"timestamp": {"$gte": "2024-01-01"}}')
@@ -357,7 +406,7 @@ Rscript analysis.R
 module load R
 
 # Set MongoDB connection (use environment variable)
-export MONGODB_URL="mongodb://mongodb-cluster:27017"
+export MONGODB_URL="mongodb://nosql-node-1:27017"
 
 # Run analysis
 Rscript analysis_nosql.R
@@ -366,7 +415,7 @@ Rscript analysis_nosql.R
 #### R Script with Environment Variables
 ```r
 # Get MongoDB URL from environment (set by Slurm job script)
-mongodb_url <- Sys.getenv("MONGODB_URL", "mongodb://mongodb-cluster:27017")
+mongodb_url <- Sys.getenv("MONGODB_URL", "mongodb://nosql-node-1:27017")
 
 # Connect to database
 con <- mongo(collection = "experiments", db = "research_db", 
@@ -386,7 +435,7 @@ migrate_rdata_to_mongodb <- function(file_path, collection_name) {
   
   # Connect to MongoDB
   con <- mongo(collection = collection_name, db = "research_db", 
-               url = "mongodb://mongodb-cluster:27017")
+               url = "mongodb://nosql-node-1:27017")
   
   # Insert data
   con$insert(get(ls()[1]))  # Get the first object from the Rdata file
@@ -410,7 +459,7 @@ This is a bit sloppy, but perhaps less prone to be disruptive to individuals on 
 load_data_smart <- function(experiment_id) {
   # Try MongoDB first
   con <- mongo(collection = "experiments", db = "research_db", 
-               url = "mongodb://mongodb-cluster:27017")
+               url = "mongodb://nosql-node-1:27017")
   
   data <- con$find(paste0('{"experiment_id": "', experiment_id, '"}'))
   
@@ -464,7 +513,7 @@ recent_experiments <- con$find('{"timestamp": {"$gte": "2024-01-01"}}')
 connect_to_mongodb <- function() {
   tryCatch({
     con <- mongo(collection = "experiments", db = "research_db", 
-                 url = "mongodb://mongodb-cluster:27017")
+                 url = "mongodb://nosql-node-1:27017")
     return(con)
   }, error = function(e) {
     cat("MongoDB connection failed:", e$message, "\n")
@@ -480,7 +529,7 @@ connect_to_mongodb <- function() {
 ```r
 # Reuse connections in long-running jobs
 con <- mongo(collection = "experiments", db = "research_db", 
-             url = "mongodb://mongodb-cluster:27017")
+             url = "mongodb://nosql-node-1:27017")
 
 # Use the same connection for multiple operations
 for (i in 1:1000) {
@@ -525,7 +574,7 @@ log_analysis <- function(experiment_id, status) {
   )
   
   log_con <- mongo(collection = "analysis_logs", db = "research_db", 
-                   url = "mongodb://mongodb-cluster:27017")
+                   url = "mongodb://nosql-node-1:27017")
   log_con$insert(log_entry)
 }
 ```
@@ -556,7 +605,7 @@ library(dplyr)
 
 # Connect to MongoDB
 con <- mongo(collection = "experiments", db = "research_db", 
-             url = "mongodb://mongodb-cluster:27017")
+             url = "mongodb://nosql-node-1:27017")
 
 # Load data from database
 my_data <- con$find('{"experiment_id": "001"}')
@@ -569,7 +618,7 @@ results <- my_data %>%
 
 # Save results to database
 results_con <- mongo(collection = "results", db = "research_db", 
-                     url = "mongodb://mongodb-cluster:27017")
+                     url = "mongodb://nosql-node-1:27017")
 results_con$insert(results)
 
 # Log completion
@@ -584,7 +633,7 @@ log_analysis("001", "completed")
 test_mongodb_connection <- function() {
   tryCatch({
     con <- mongo(collection = "test", db = "test", 
-                 url = "mongodb://mongodb-cluster:27017")
+                 url = "mongodb://nosql-node-1:27017")
     con$insert(list(test = "connection"))
     con$drop()
     return(TRUE)
@@ -682,7 +731,8 @@ If you encounter errors like "The provider 'libvirt' that was requested to back 
 
 1. **NFS Mount Failures**: Check controller node NFS service
 2. **Slurm Communication**: Verify Munge keys are synchronized
-3. **MongoDB Replication**: Check network connectivity between nodes
+3. **MongoDB Sharding**: Check config server and mongos router status
+4. **Data Distribution**: Verify shard status with `sh.status()` in mongosh
 
 
 ### Logs

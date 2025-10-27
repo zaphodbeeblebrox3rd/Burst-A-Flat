@@ -84,17 +84,24 @@
     - role: common
     - role: r_environment
 
-- name: Configure MongoDB Primary
-  hosts: mongodb_primary
+- name: Configure MongoDB Config Server
+  hosts: mongodb_config
+  become: yes
+  roles:
+    - role: mongodb_config
+
+- name: Configure MongoDB Shards
+  hosts: mongodb_shards
   become: yes
   roles:
     - role: mongodb_primary
+    - role: mongodb_replica
 
-- name: Configure MongoDB Replica
-  hosts: mongodb_replica
+- name: Configure MongoDB Mongos Routers
+  hosts: mongodb_mongos
   become: yes
   roles:
-    - role: mongodb_replica
+    - role: mongodb_mongos
 
 - name: Final cluster configuration
   hosts: all
@@ -221,7 +228,7 @@
         owner: vagrant
         group: vagrant
         mode: '0755'
-      when: inventory_hostname in groups['network2']
+      when: inventory_hostname in groups['network2'] and inventory_hostname not in groups['mongodb_replica']
 
     - name: Copy R workload demo sbatch script to NFS share
       ansible.builtin.copy:
