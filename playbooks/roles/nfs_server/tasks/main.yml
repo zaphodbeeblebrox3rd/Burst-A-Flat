@@ -17,6 +17,14 @@
     group: vagrant
     mode: '0755'
 
+- name: Create results directory
+  ansible.builtin.file:
+    path: /home/shared/results
+    state: directory
+    owner: vagrant
+    group: vagrant
+    mode: '0755'
+
 - name: Configure NFS exports
   ansible.builtin.template:
     src: exports.j2

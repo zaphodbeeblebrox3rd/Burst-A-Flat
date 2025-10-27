@@ -71,6 +71,12 @@
   roles:
     - role: nfs_client
 
+- name: Configure non-NFS clients with a separate mount point for results
+  hosts: network2
+  become: yes
+  roles:
+    - role: non_nfs_client
+
 - name: Configure R Environment on Login Node
   hosts: slurm_login
   become: yes
