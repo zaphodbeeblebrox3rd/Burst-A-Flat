@@ -40,11 +40,11 @@ demonstrate_nosql_solution <- function() {
            # Determine MongoDB host based on network
            if (grepl('compute-node-[3-4]', node_info)) {
              # Network 2 - use mongos on nosql-node-2
-             mongo_host <- 'nosql-node-2:27017  # mongos router'
+             mongo_host <- 'nosql-node-2:27017'
              cat('Using Network 2 (Cloud) MongoDB mongos router\n')
            } else {
              # Network 1 - use mongos on nosql-node-1
-             mongo_host <- 'nosql-node-1:27017  # mongos router'
+             mongo_host <- 'nosql-node-1:27017'
              cat('Using Network 1 (On-premises) MongoDB mongos router\n')
            }
     
@@ -164,9 +164,9 @@ generate_sample_data <- function() {
     }
     
     if (grepl('compute-node-[3-4]', node_info)) {
-      mongo_host <- 'nosql-node-2:27017  # mongos router'
+      mongo_host <- 'nosql-node-2:27017'
     } else {
-      mongo_host <- 'nosql-node-1:27017  # mongos router'
+      mongo_host <- 'nosql-node-1:27017'
     }
     
     cat('Saving to MongoDB at:', mongo_host, '\n')
@@ -234,9 +234,9 @@ generate_sample_data_cloud_only <- function() {
     }
     
     if (grepl('compute-node-[3-4]', node_info)) {
-      mongo_host <- 'nosql-node-2:27017  # mongos router'
+      mongo_host <- 'nosql-node-2:27017'
     } else {
-      mongo_host <- 'nosql-node-1:27017  # mongos router'
+      mongo_host <- 'nosql-node-1:27017'
     }
     
     cat('Saving to MongoDB at:', mongo_host, '\n')

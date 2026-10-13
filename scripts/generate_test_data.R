@@ -69,12 +69,12 @@ sample_data <- generate_sample_data(10000)
 cat("Saving to NFS...\n")
 save_to_nfs(sample_data)
 
-# Save to MongoDB primary
-cat("Saving to MongoDB primary...\n")
+# Save via Network 1 mongos router
+cat("Saving via mongos on nosql-node-1...\n")
 save_to_mongodb(sample_data, "nosql-node-1:27017")
 
-# Save to MongoDB replica
-cat("Saving to MongoDB replica...\n")
+# Save via Network 2 mongos router (same sharded cluster)
+cat("Saving via mongos on nosql-node-2...\n")
 save_to_mongodb(sample_data, "nosql-node-2:27017")
 
 # Generate summary statistics

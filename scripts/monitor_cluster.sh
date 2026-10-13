@@ -26,7 +26,6 @@ check_service() {
 # Check Slurm services
 echo "=== Slurm Services ==="
 check_service "slurmctld" "controller-node"
-check_service "slurmd" "controller-node"
 check_service "slurmd" "compute-node-1"
 check_service "slurmd" "compute-node-2"
 check_service "slurmd" "compute-node-3"
@@ -36,8 +35,11 @@ echo ""
 # Check database services
 echo "=== Database Services ==="
 check_service "mariadb" "slurmdb-node"
+check_service "mongod-config" "controller-node"
 check_service "mongod" "nosql-node-1"
+check_service "mongos" "nosql-node-1"
 check_service "mongod" "nosql-node-2"
+check_service "mongos" "nosql-node-2"
 echo ""
 
 # Check NFS services
@@ -66,20 +68,20 @@ echo "=== NFS Mounts ==="
 vagrant ssh login-node -c "df -h | grep shared" 2>/dev/null
 echo ""
 
-# Check MongoDB status
+# Check MongoDB status (mongos routers)
 echo "=== MongoDB Status ==="
-vagrant ssh nosql-node-1 -c "mongosh --eval 'db.runCommand(\"ping\")' --quiet" 2>/dev/null
+vagrant ssh nosql-node-1 -c "mongosh --host localhost:27017 --eval 'db.runCommand(\"ping\")' --quiet" 2>/dev/null
 if [ $? -eq 0 ]; then
-    echo "✅ MongoDB Primary: Connected"
+    echo "MongoDB mongos (nosql-node-1): Connected"
 else
-    echo "❌ MongoDB Primary: Not connected"
+    echo "MongoDB mongos (nosql-node-1): Not connected"
 fi
 
-vagrant ssh nosql-node-2 -c "mongosh --eval 'db.runCommand(\"ping\")' --quiet" 2>/dev/null
+vagrant ssh nosql-node-2 -c "mongosh --host localhost:27017 --eval 'db.runCommand(\"ping\")' --quiet" 2>/dev/null
 if [ $? -eq 0 ]; then
-    echo "✅ MongoDB Replica: Connected"
+    echo "MongoDB mongos (nosql-node-2): Connected"
 else
-    echo "❌ MongoDB Replica: Not connected"
+    echo "MongoDB mongos (nosql-node-2): Not connected"
 fi
 echo ""
 

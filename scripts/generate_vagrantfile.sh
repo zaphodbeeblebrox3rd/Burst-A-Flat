@@ -1,11 +1,16 @@
 #!/bin/bash
 # Dynamic Vagrantfile generator for Burst-A-Flat
-# Supports both VirtualBox and vSphere
+# Supports kvm (default), virtualbox, and vsphere
 
 set -e
 
 CONFIG_FILE="config.yml"
 VAGRANTFILE="Vagrantfile"
+
+# True when a line starts a sibling VM block under vms: (2-space indent, name:)
+is_vm_header() {
+    [[ "$1" =~ ^[[:space:]]{2}[a-zA-Z0-9_-]+:[[:space:]]*$ ]]
+}
 
 # Function to read YAML values (simple implementation)
 read_yaml() {
@@ -14,12 +19,16 @@ read_yaml() {
     grep "^${key}:" "$file" | sed "s/^${key}:[[:space:]]*//" | tr -d '"' | tr -d "'"
 }
 
-# Function to read nested YAML values
+# Function to read nested YAML values under a top-level section (e.g. providers.box)
+# Scoped to the active provider subsection when section is "providers".
 read_yaml_nested() {
     local section="$1"
     local key="$2"
     local file="$3"
     local in_section=false
+    local in_provider=false
+    local provider
+    provider=$(read_yaml "provider" "$file")
     
     while IFS= read -r line; do
         if [[ "$line" =~ ^${section}: ]]; then
@@ -28,15 +37,34 @@ read_yaml_nested() {
         fi
         if [[ "$line" =~ ^[a-zA-Z] ]] && [[ ! "$line" =~ ^[[:space:]] ]]; then
             in_section=false
+            in_provider=false
         fi
-        if [[ "$in_section" == true ]] && [[ "$line" =~ ^[[:space:]]*${key}: ]]; then
+        if [[ "$in_section" != true ]]; then
+            continue
+        fi
+        # Under providers:, only read keys for the active provider
+        if [[ "$section" == "providers" ]]; then
+            if [[ "$line" =~ ^[[:space:]]{2}${provider}: ]]; then
+                in_provider=true
+                continue
+            fi
+            if is_vm_header "$line" || [[ "$line" =~ ^[[:space:]]{2}[a-zA-Z0-9_-]+: ]]; then
+                if [[ ! "$line" =~ ^[[:space:]]{2}${provider}: ]]; then
+                    in_provider=false
+                fi
+            fi
+            if [[ "$in_provider" != true ]]; then
+                continue
+            fi
+        fi
+        if [[ "$line" =~ ^[[:space:]]+${key}: ]]; then
             echo "$line" | sed "s/^[[:space:]]*${key}:[[:space:]]*//" | tr -d '"' | tr -d "'"
             return
         fi
     done < "$file"
 }
 
-# Function to get VM configuration
+# Function to get VM configuration (scoped to a single VM block under vms:)
 get_vm_config() {
     local vm_name="$1"
     local key="$2"
@@ -44,16 +72,19 @@ get_vm_config() {
     local in_vm=false
     
     while IFS= read -r line; do
-        if [[ "$line" =~ ^[[:space:]]*${vm_name}: ]]; then
+        if [[ "$line" =~ ^[[:space:]]{2}${vm_name}:[[:space:]]*$ ]]; then
             in_vm=true
             continue
         fi
-        if [[ "$line" =~ ^[a-zA-Z] ]] && [[ ! "$line" =~ ^[[:space:]] ]]; then
-            in_vm=false
-        fi
-        if [[ "$in_vm" == true ]] && [[ "$line" =~ ^[[:space:]]*${key}: ]]; then
-            echo "$line" | sed "s/^[[:space:]]*${key}:[[:space:]]*//" | tr -d '"' | tr -d "'"
-            return
+        if [[ "$in_vm" == true ]]; then
+            # Next VM at the same indent, or a new top-level key
+            if is_vm_header "$line" || [[ "$line" =~ ^[a-zA-Z] ]]; then
+                return
+            fi
+            if [[ "$line" =~ ^[[:space:]]+${key}: ]]; then
+                echo "$line" | sed "s/^[[:space:]]*${key}:[[:space:]]*//" | tr -d '"' | tr -d "'"
+                return
+            fi
         fi
     done < "$file"
 }
@@ -63,35 +94,39 @@ get_vm_roles() {
     local vm_name="$1"
     local file="$2"
     local in_vm=false
+    local in_roles=false
     local roles=""
     
     while IFS= read -r line; do
-        if [[ "$line" =~ ^[[:space:]]*${vm_name}: ]]; then
+        if [[ "$line" =~ ^[[:space:]]{2}${vm_name}:[[:space:]]*$ ]]; then
             in_vm=true
             continue
         fi
-        if [[ "$line" =~ ^[a-zA-Z] ]] && [[ ! "$line" =~ ^[[:space:]] ]]; then
-            in_vm=false
+        if [[ "$in_vm" != true ]]; then
+            continue
         fi
-        if [[ "$in_vm" == true ]] && [[ "$line" =~ ^[[:space:]]*roles: ]]; then
-            # Extract roles array
-            local role_line="$line"
-            while IFS= read -r next_line; do
-                if [[ "$next_line" =~ ^[[:space:]]*-[[:space:]]* ]]; then
-                    local role=$(echo "$next_line" | sed "s/^[[:space:]]*-[[:space:]]*//" | tr -d '"' | tr -d "'")
-                    if [[ -n "$roles" ]]; then
-                        roles="${roles}, ${role}"
-                    else
-                        roles="$role"
-                    fi
-                elif [[ ! "$next_line" =~ ^[[:space:]] ]] || [[ -z "$next_line" ]]; then
-                    break
+        if is_vm_header "$line" || [[ "$line" =~ ^[a-zA-Z] ]]; then
+            break
+        fi
+        if [[ "$line" =~ ^[[:space:]]+roles: ]]; then
+            in_roles=true
+            continue
+        fi
+        if [[ "$in_roles" == true ]]; then
+            if [[ "$line" =~ ^[[:space:]]+-[[:space:]]* ]]; then
+                local role
+                role=$(echo "$line" | sed "s/^[[:space:]]*-[[:space:]]*//" | tr -d '"' | tr -d "'")
+                if [[ -n "$roles" ]]; then
+                    roles="${roles}, ${role}"
+                else
+                    roles="$role"
                 fi
-            done
-            echo "$roles"
-            return
+            else
+                break
+            fi
         fi
     done < "$file"
+    echo "$roles"
 }
 
 # Check if config file exists
