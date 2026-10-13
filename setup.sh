@@ -44,8 +44,12 @@ sudo systemctl stop vboxdrv 2>/dev/null || true
 sudo systemctl disable vboxdrv 2>/dev/null || true
 
 # Generate Vagrantfile for KVM
-echo "📝 Generating Vagrantfile for KVM/libvirt..."
+echo "Generating Vagrantfile for KVM/libvirt..."
 bash scripts/generate_vagrantfile.sh kvm
+
+# Ensure Ansible vault password file exists (required by ansible.cfg)
+echo "Preparing Ansible vault password file..."
+bash scripts/manage_vault.sh
 
 echo ""
 echo "=== Setup Complete ==="

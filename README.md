@@ -161,7 +161,9 @@ vagrant up
 
 ### Step 3: Configure Cluster
 ```bash
-ansible-playbook playbooks/site.yml
+# Creates .vault_pass and passwords/ if missing (gitignored)
+./scripts/manage_vault.sh
+ansible-playbook -i inventory/hosts playbooks/site.yml
 ```
 
 ### Step 4: Test the Cluster
@@ -193,10 +195,10 @@ db.test_collection.find().forEach(printjson)
 ### Step 6: Run R Workload Demo
 ```bash
 # This will demonstrate the cloud burst scenario with sharding
-sbatch ~/shared/scripts/r_workload_demo.sh
+sbatch /home/vagrant/shared/scripts/r_workload_demo.sh
 
 # Check results
-ls -la ~/shared/results/
+ls -la /home/vagrant/shared/results/
 ```
 
 ## KVM/libvirt Benefits
@@ -396,10 +398,7 @@ hourly_data <- sensor_data %>%
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 
-# Load R
-module load R
-
-# Run analysis
+# Run analysis (R is installed on compute nodes by the playbook)
 Rscript analysis.R
 ```
 
@@ -409,9 +408,6 @@ Rscript analysis.R
 #SBATCH --job-name=analysis
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-
-# Load R
-module load R
 
 # Set MongoDB connection (use environment variable)
 export MONGODB_URL="mongodb://nosql-node-1:27017"
@@ -556,7 +552,7 @@ batch_data <- lapply(1:1000, function(i) {
 con$insert(batch_data)
 ```
 
-### Step 9: Monitoring and Debugging
+### Step 8: Monitoring and Debugging
 
 #### Check Database Status
 ```r
@@ -587,7 +583,7 @@ log_analysis <- function(experiment_id, status) {
 }
 ```
 
-### Step 10: Complete Example
+### Step 9: Complete Example
 
 Here's a complete example of converting a research analysis:
 
@@ -679,7 +675,15 @@ This guide provides a complete pathway for researchers to migrate from tradition
 ```
 ├── README.md
 ├── Vagrantfile
+├── Vagrantfile.vmware
 ├── config.yml
+├── ansible.cfg
+├── setup.sh
+├── deploy.sh
+├── requirements.txt
+├── docs/
+│   ├── ARCHITECTURE.md
+│   └── R_PACKAGE_CUSTOMIZATION.md
 ├── inventory/
 │   ├── hosts
 │   └── group_vars/
@@ -692,11 +696,13 @@ This guide provides a complete pathway for researchers to migrate from tradition
 │       ├── mongodb_config/
 │       ├── mongodb_shard/
 │       ├── mongodb_mongos/
+│       ├── slurm/
 │       ├── slurm_controller/
 │       ├── slurm_compute/
 │       ├── slurmdb/
 │       ├── nfs_server/
 │       ├── nfs_client/
+│       ├── non_nfs_client/
 │       ├── mariadb_server/
 │       ├── munge/
 │       ├── network_config/
@@ -707,11 +713,16 @@ This guide provides a complete pathway for researchers to migrate from tradition
 │   ├── r_workload_demo.R
 │   ├── generate_test_data.R
 │   ├── generate_sample_data.R
+│   ├── generate_vagrantfile.sh
+│   ├── check_provider.sh
+│   ├── example_job.sh
+│   ├── manage_vault.sh
 │   ├── test_cluster.sh
 │   ├── monitor_cluster.sh
 │   ├── cleanup.sh
 │   └── setup_host_r_environment.sh
-└── passwords/
+└── passwords/          # created at runtime; gitignored
+    ├── munge.key
     └── munge.key.md5
 ```
 

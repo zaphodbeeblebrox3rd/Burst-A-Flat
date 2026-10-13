@@ -57,10 +57,10 @@ echo "=== MongoDB Connectivity ==="
 if command -v mongosh &> /dev/null; then
     # Determine which MongoDB to connect to
     if [[ "$SLURM_JOB_NODELIST" =~ compute-node-[34] ]]; then
-        # Network 2 - use replica
+        # Network 2 - local mongos router
         mongo_host="nosql-node-2:27017"
     else
-        # Network 1 - use primary
+        # Network 1 - local mongos router
         mongo_host="nosql-node-1:27017"
     fi
     

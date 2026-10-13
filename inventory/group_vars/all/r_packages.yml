@@ -15,7 +15,6 @@ r_system_packages:
   - libsqlite3-dev
   - libpq-dev
   - libssh2-1-dev
-  - libssh2-1-dev
   - r-base
   - r-base-dev
   - r-cran-dplyr

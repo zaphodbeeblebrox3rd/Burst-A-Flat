@@ -1,5 +1,10 @@
 # Burst-A-Flat Configuration
-# Choose your virtualization provider: virtualbox or vsphere
+# Choose your virtualization provider: kvm (recommended), virtualbox, or vsphere
+#
+# Rollback: set apply_stale_content_fixes to false and revert the paired PR
+# commit if a documentation or helper-script sync change causes trouble.
+# Keep Vagrant IP layout and R mongo_host fixes; those correct real breakage.
+apply_stale_content_fixes: true
 
 provider: "kvm"
 

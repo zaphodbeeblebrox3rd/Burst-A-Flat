@@ -22,13 +22,35 @@ if ! command -v ansible &> /dev/null; then
     exit 1
 fi
 
-# Check if VirtualBox is installed
-if ! command -v VBoxManage &> /dev/null; then
-    echo "ERROR: VirtualBox is not installed. Please install VirtualBox first."
-    exit 1
-fi
+# Check virtualization provider from config.yml (default: kvm)
+PROVIDER=$(grep '^provider:' config.yml 2>/dev/null | sed 's/^provider:[[:space:]]*//' | tr -d '"' | tr -d "'" || echo "kvm")
+case "$PROVIDER" in
+    kvm|"")
+        if ! command -v virsh &> /dev/null; then
+            echo "ERROR: libvirt/virsh not found. Run ./setup.sh for KVM/libvirt, or set provider in config.yml."
+            exit 1
+        fi
+        ;;
+    virtualbox)
+        if ! command -v VBoxManage &> /dev/null; then
+            echo "ERROR: VirtualBox is not installed. Please install VirtualBox or switch provider to kvm."
+            exit 1
+        fi
+        ;;
+    vsphere)
+        echo "NOTE: vsphere provider selected; ensure the Vagrant vSphere plugin is configured."
+        ;;
+    *)
+        echo "ERROR: Unknown provider '$PROVIDER' in config.yml"
+        exit 1
+        ;;
+esac
 
-echo "✅ All prerequisites found"
+echo "All prerequisites found (provider: ${PROVIDER:-kvm})"
+echo ""
+
+# Ensure Ansible vault password file exists (required by ansible.cfg)
+bash scripts/manage_vault.sh
 echo ""
 
 # Create necessary directories
@@ -36,7 +58,7 @@ echo "Creating directories..."
 mkdir -p data
 mkdir -p results
 mkdir -p logs
-echo "✅ Directories created"
+echo "Directories created"
 echo ""
 
 # Deploy VMs
@@ -53,10 +75,10 @@ ansible-playbook -i inventory/hosts playbooks/site.yml
 echo "✅ Cluster configured"
 echo ""
 
-# Generate test data
+# Generate test data on login node (NFS client mount of shared scripts)
 echo "Generating test data..."
-vagrant ssh controller-node -c "Rscript /home/vagrant/shared/scripts/generate_test_data.R"
-echo "✅ Test data generated"
+vagrant ssh login-node -c "Rscript /home/vagrant/shared/scripts/generate_test_data.R"
+echo "Test data generated"
 echo ""
 
 # Test cluster

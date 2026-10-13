@@ -1,17 +1,18 @@
 # Burst-A-Flat Slurm Cluster Requirements
 
 ## System Requirements
-- VirtualBox 6.0+ or VMware
-- Vagrant 2.0+
+- KVM/libvirt (recommended; VirtualBox and vSphere are experimental)
+- Vagrant 2.0+ with vagrant-libvirt plugin for KVM
 - Ansible 2.9+
-- 8GB+ RAM (for all VMs)
+- 24GB+ RAM recommended for all VMs
 - 50GB+ free disk space
+- Debian-family host OS
 
 ## Software Versions
-- Ubuntu 22.04 LTS (Jammy)
-- Slurm 23.02.6
+- Ubuntu 22.04 LTS (Jammy) guest VMs
+- Slurm 24.05.4
 - MariaDB 10.6+
-- MongoDB 6.0+
+- MongoDB 6.0+ (sharded: config server, mongos, shards)
 - R 4.2+
 - Munge (latest)
 

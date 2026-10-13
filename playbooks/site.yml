@@ -220,6 +220,24 @@
         mode: '0755'
       when: inventory_hostname in groups['slurm_controllers']
 
+    - name: Copy test data generation script to NFS share
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../scripts/generate_test_data.R"
+        dest: /home/shared/scripts/generate_test_data.R
+        owner: vagrant
+        group: vagrant
+        mode: '0755'
+      when: inventory_hostname in groups['slurm_controllers']
+
+    - name: Copy example job script to NFS share
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../scripts/example_job.sh"
+        dest: /home/shared/scripts/example_job.sh
+        owner: vagrant
+        group: vagrant
+        mode: '0755'
+      when: inventory_hostname in groups['slurm_controllers']
+
     - name: Copy R workload demo sbatch script to remote nodes without NFS
       ansible.builtin.copy:
         src: "{{ playbook_dir }}/../scripts/r_workload_demo.sh"
